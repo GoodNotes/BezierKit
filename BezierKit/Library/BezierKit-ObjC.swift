@@ -12,7 +12,7 @@ import CoreGraphics
 
 import Foundation
 
-#if !os(WASI) && !os(Linux)
+#if canImport(ObjectiveC)
 
 // MARK: Path.swift
 @available (*, unavailable)

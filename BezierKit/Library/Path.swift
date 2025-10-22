@@ -150,12 +150,12 @@ open class Path: NSObject {
         return intersections
     }
 
-    #if os(WASI) || os(Linux)
-    public convenience override init() {
+    #if canImport(ObjectiveC)
+    @objc public convenience override init() {
         self.init(components: [])
     }
     #else
-    @objc public convenience override init() {
+    public convenience override init() {
         self.init(components: [])
     }
     #endif

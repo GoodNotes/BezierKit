@@ -20,7 +20,7 @@ private extension Array {
     }
 }
 
-@objc(BezierKitPathFillRule) public enum PathFillRule: NSInteger {
+public enum PathFillRule: NSInteger {
     case winding = 0, evenOdd
 }
 
@@ -150,15 +150,9 @@ open class Path: NSObject {
         return intersections
     }
 
-    #if canImport(ObjectiveC)
-    @objc public convenience override init() {
-        self.init(components: [])
-    }
-    #else
     public convenience override init() {
         self.init(components: [])
     }
-    #endif
 
     required public init(components: [PathComponent]) {
         self.components = components

@@ -6,13 +6,12 @@
 //  Copyright © 2018 Holmes Futrell. All rights reserved.
 //
 
-import XCTest
 @testable import BezierKit
+import XCTest
 
 class PathComponentTests: XCTestCase {
-
-    let line1 = LineSegment(p0: CGPoint(x: 1.0, y: 2.0), p1: CGPoint(x: 5.0, y: 5.0))   // length = 5
-    let line2 = LineSegment(p0: CGPoint(x: 5.0, y: 5.0), p1: CGPoint(x: 13.0, y: -1.0)) // length = 10
+    let line1 = LineSegment(p0: Point(x: 1.0, y: 2.0), p1: Point(x: 5.0, y: 5.0)) // length = 5
+    let line2 = LineSegment(p0: Point(x: 5.0, y: 5.0), p1: Point(x: 13.0, y: -1.0)) // length = 10
 
     func testLength() {
         let p = PathComponent(curves: [line1, line2])
@@ -21,35 +20,35 @@ class PathComponentTests: XCTestCase {
 
     func testBoundingBox() {
         let p = PathComponent(curves: [line1, line2])
-        XCTAssertEqual(p.boundingBox, BoundingBox(min: CGPoint(x: 1.0, y: -1.0), max: CGPoint(x: 13.0, y: 5.0))) // just the union of the two bounding boxes
+        XCTAssertEqual(p.boundingBox, BoundingBox(min: Point(x: 1.0, y: -1.0), max: Point(x: 13.0, y: 5.0))) // just the union of the two bounding boxes
     }
 
     func testBoundingBoxOfPath() {
-        let point1 = CGPoint(x: 3, y: -2)
+        let point1 = Point(x: 3, y: -2)
         let pointComponent = PathComponent(points: [point1], orders: [0])
-        XCTAssertEqual(pointComponent.boundingBoxOfPath, BoundingBox(p1: CGPoint(x: 3, y: -2), p2: CGPoint(x: 3, y: -2)))
+        XCTAssertEqual(pointComponent.boundingBoxOfPath, BoundingBox(p1: Point(x: 3, y: -2), p2: Point(x: 3, y: -2)))
 
-        let line = LineSegment(p0: CGPoint(x: 1, y: 2),
-                               p1: CGPoint(x: 5, y: 3))
+        let line = LineSegment(p0: Point(x: 1, y: 2),
+                               p1: Point(x: 5, y: 3))
 
-        let quadratic = QuadraticCurve(p0: CGPoint(x: 5, y: 3),
-                                       p1: CGPoint(x: 4, y: 4),
-                                       p2: CGPoint(x: 3, y: 6))
+        let quadratic = QuadraticCurve(p0: Point(x: 5, y: 3),
+                                       p1: Point(x: 4, y: 4),
+                                       p2: Point(x: 3, y: 6))
 
-        let cubic = CubicCurve(p0: CGPoint(x: 3, y: 6),
-                               p1: CGPoint(x: 2, y: 5),
-                               p2: CGPoint(x: -1, y: 4),
-                               p3: CGPoint(x: 1, y: 2))
+        let cubic = CubicCurve(p0: Point(x: 3, y: 6),
+                               p1: Point(x: 2, y: 5),
+                               p2: Point(x: -1, y: 4),
+                               p3: Point(x: 1, y: 2))
 
-        XCTAssertEqual(PathComponent(curve: line).boundingBoxOfPath, BoundingBox(p1: CGPoint(x: 1, y: 2), p2: CGPoint(x: 5, y: 3)))
-        XCTAssertEqual(PathComponent(curve: quadratic).boundingBoxOfPath, BoundingBox(p1: CGPoint(x: 3, y: 3), p2: CGPoint(x: 5, y: 6)))
-        XCTAssertEqual(PathComponent(curve: cubic).boundingBoxOfPath, BoundingBox(p1: CGPoint(x: -1, y: 2), p2: CGPoint(x: 3, y: 6)))
-        XCTAssertEqual(PathComponent(curves: [line, quadratic, cubic]).boundingBoxOfPath, BoundingBox(p1: CGPoint(x: -1, y: 2), p2: CGPoint(x: 5, y: 6)))
+        XCTAssertEqual(PathComponent(curve: line).boundingBoxOfPath, BoundingBox(p1: Point(x: 1, y: 2), p2: Point(x: 5, y: 3)))
+        XCTAssertEqual(PathComponent(curve: quadratic).boundingBoxOfPath, BoundingBox(p1: Point(x: 3, y: 3), p2: Point(x: 5, y: 6)))
+        XCTAssertEqual(PathComponent(curve: cubic).boundingBoxOfPath, BoundingBox(p1: Point(x: -1, y: 2), p2: Point(x: 3, y: 6)))
+        XCTAssertEqual(PathComponent(curves: [line, quadratic, cubic]).boundingBoxOfPath, BoundingBox(p1: Point(x: -1, y: 2), p2: Point(x: 5, y: 6)))
     }
 
     func testOffset() {
         // construct a PathComponent from a split cubic
-        let q = QuadraticCurve(p0: CGPoint(x: 0.0, y: 0.0), p1: CGPoint(x: 2.0, y: 1.0), p2: CGPoint(x: 4.0, y: 0.0))
+        let q = QuadraticCurve(p0: Point(x: 0.0, y: 0.0), p1: Point(x: 2.0, y: 1.0), p2: Point(x: 4.0, y: 0.0))
         let (ql, qr) = q.split(at: 0.5)
         let p = PathComponent(curves: [ql, qr])
         // test that offset gives us the same result as offsetting the split segments
@@ -61,17 +60,16 @@ class PathComponentTests: XCTestCase {
         }
     }
 
-    private let p1 = CGPoint(x: 0.0, y: 1.0)
-    private let p2 = CGPoint(x: 2.0, y: 1.0)
-    private let p3 = CGPoint(x: 2.5, y: 0.5)
-    private let p4 = CGPoint(x: 2.0, y: 0.0)
-    private let p5 = CGPoint(x: 0.0, y: 0.0)
-    private let p6 = CGPoint(x: -0.5, y: 0.25)
-    private let p7 = CGPoint(x: -0.5, y: 0.75)
-    private let p8 = CGPoint(x: 0.0, y: 1.0)
+    private let p1 = Point(x: 0.0, y: 1.0)
+    private let p2 = Point(x: 2.0, y: 1.0)
+    private let p3 = Point(x: 2.5, y: 0.5)
+    private let p4 = Point(x: 2.0, y: 0.0)
+    private let p5 = Point(x: 0.0, y: 0.0)
+    private let p6 = Point(x: -0.5, y: 0.25)
+    private let p7 = Point(x: -0.5, y: 0.75)
+    private let p8 = Point(x: 0.0, y: 1.0)
 
     func testEquatable() {
-
         let l1 = LineSegment(p0: p1, p1: p2)
         let q1 = QuadraticCurve(p0: p2, p1: p3, p2: p4)
         let l2 = LineSegment(p0: p4, p1: p5)
@@ -86,12 +84,11 @@ class PathComponentTests: XCTestCase {
         let pathComponent4 = PathComponent(curves: [l1, q1, l2, altC1])
 
         XCTAssertNotEqual(pathComponent1, pathComponent2) // pathComponent2 is missing 4th path element, so not equal
-        XCTAssertEqual(pathComponent1, pathComponent3)    // same path elements means equal
+        XCTAssertEqual(pathComponent1, pathComponent3) // same path elements means equal
         XCTAssertNotEqual(pathComponent1, pathComponent4) // pathComponent4 has an element with a modified path
     }
 
     func testIsEqual() {
-
         let l1 = LineSegment(p0: p1, p1: p2)
         let q1 = QuadraticCurve(p0: p2, p1: p3, p2: p4)
         let l2 = LineSegment(p0: p4, p1: p5)
@@ -141,90 +138,90 @@ class PathComponentTests: XCTestCase {
         XCTAssertFalse(location2 < location1)
     }
 
-    let pointPathComponent = PathComponent(points: [CGPoint(x: 3.145, y: -8.34)], orders: [0]) // just a single point
+    let pointPathComponent = PathComponent(points: [Point(x: 3.145, y: -8.34)], orders: [0]) // just a single point
 
     #if canImport(CoreGraphics)
-    let circlePathComponent = Path(cgPath: CGPath(ellipseIn: CGRect(x: -1, y: -1, width: 2, height: 2), transform: nil)).components[0]
+        let circlePathComponent = Path(cgPath: CGPath(ellipseIn: Rect(x: -1, y: -1, width: 2, height: 2).cgRect, transform: nil)).components[0]
 
-    func testStartingEndingPointAt() {
-        XCTAssertEqual(circlePathComponent.startingPointForElement(at: 0), circlePathComponent.curves[0].startingPoint)
-        XCTAssertEqual(circlePathComponent.startingPointForElement(at: 2), circlePathComponent.curves[2].startingPoint)
-        XCTAssertEqual(circlePathComponent.endingPointForElement(at: 0), circlePathComponent.curves[0].endingPoint)
-        XCTAssertEqual(circlePathComponent.endingPointForElement(at: 2), circlePathComponent.curves[2].endingPoint)
-    }
-
-    func testSplitFromTo() {
-        // corner case, check that splitting a point always yields the same thin
-        XCTAssertEqual(pointPathComponent, pointPathComponent.split(from: IndexedPathComponentLocation(elementIndex: 0, t: 0.2),
-                                                                      to: IndexedPathComponentLocation(elementIndex: 0, t: 0.8)))
-
-        XCTAssertEqual(circlePathComponent.startingIndexedLocation, IndexedPathComponentLocation(elementIndex: 0, t: 0))
-        XCTAssertEqual(circlePathComponent.endingIndexedLocation, IndexedPathComponentLocation(elementIndex: 3, t: 1.0))
-
-        // check case of splitting a single path element
-        let split1 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.3), to: IndexedPathComponentLocation(elementIndex: 1, t: 0.6))
-        let expectedValue1 = PathComponent(curves: [circlePathComponent.element(at: 1).split(from: 0.3, to: 0.6)])
-        XCTAssertEqual(split1, expectedValue1)
-
-        // check case of splitting two path elements where neither is the complete element
-        let split2 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.3), to: IndexedPathComponentLocation(elementIndex: 2, t: 0.6))
-        let expectedValue2 = PathComponent(curves: [circlePathComponent.element(at: 1).split(from: 0.3, to: 1.0), circlePathComponent.element(at: 2).split(from: 0.0, to: 0.6)])
-        XCTAssertEqual(split2, expectedValue2)
-
-        // check case of splitting where there is a full element in the middle
-        let split3StartIndexedLocation = IndexedPathComponentLocation(elementIndex: 1, t: 0.3)
-        let split3EndIndexedLocation = IndexedPathComponentLocation(elementIndex: 3, t: 0.6)
-        let split3 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.3), to: IndexedPathComponentLocation(elementIndex: 3, t: 0.6))
-        let expectedValue3 = PathComponent(curves: [circlePathComponent.element(at: 1).split(from: 0.3, to: 1.0), circlePathComponent.element(at: 2), circlePathComponent.element(at: 3).split(from: 0.0, to: 0.6)])
-        XCTAssertEqual(split3, expectedValue3)
-
-        // misc cases for all code paths
-        let split4 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 3, t: 0), to: IndexedPathComponentLocation(elementIndex: 3, t: 1))
-        let expectedValue4 = PathComponent(curves: [circlePathComponent.element(at: 3)])
-        XCTAssertEqual(split4, expectedValue4)
-
-        let split5 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0), to: IndexedPathComponentLocation(elementIndex: 2, t: 0.5))
-        let expectedValue5 = PathComponent(curves: [circlePathComponent.element(at: 1), circlePathComponent.element(at: 2).split(from: 0, to: 0.5)])
-        XCTAssertEqual(split5, expectedValue5)
-
-        let split6 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.5), to: IndexedPathComponentLocation(elementIndex: 2, t: 1))
-        let expectedValue6 = PathComponent(curves: [circlePathComponent.element(at: 1).split(from: 0.5, to: 1), circlePathComponent.element(at: 2)])
-        XCTAssertEqual(split6, expectedValue6)
-
-        // check that reversing the order of start and end reverses the split curve
-        let split3alt = circlePathComponent.split(from: split3EndIndexedLocation, to: split3StartIndexedLocation)
-        XCTAssertEqual(split3alt, expectedValue3.reversed())
-
-        // check that splitting over the entire curve gives the same curve back
-        let split7 = circlePathComponent.split(from: circlePathComponent.startingIndexedLocation, to: circlePathComponent.endingIndexedLocation)
-        XCTAssertEqual(split7, circlePathComponent)
-
-        // check that if the starting location is at t=1 we do not create degenerate curves of length zero
-        let split5alt = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 0, t: 1.0), to: IndexedPathComponentLocation(elementIndex: 2, t: 0.5))
-        XCTAssertEqual(split5alt, expectedValue5)
-
-        // check that if the ending location is at t=0 we do not create degenerate curves of length zero
-        let split6alt = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.5), to: IndexedPathComponentLocation(elementIndex: 3, t: 0))
-        XCTAssertEqual(split6alt, expectedValue6)
-    }
-
-    func testEnumeratePoints() {
-        func arrayByEnumerating(component: PathComponent, includeControlPoints: Bool) -> [CGPoint] {
-            var points: [CGPoint] = []
-            component.enumeratePoints(includeControlPoints: includeControlPoints) { points.append($0) }
-            return points
+        func testStartingEndingPointAt() {
+            XCTAssertEqual(circlePathComponent.startingPointForElement(at: 0), circlePathComponent.curves[0].startingPoint)
+            XCTAssertEqual(circlePathComponent.startingPointForElement(at: 2), circlePathComponent.curves[2].startingPoint)
+            XCTAssertEqual(circlePathComponent.endingPointForElement(at: 0), circlePathComponent.curves[0].endingPoint)
+            XCTAssertEqual(circlePathComponent.endingPointForElement(at: 2), circlePathComponent.curves[2].endingPoint)
         }
-        XCTAssertEqual(arrayByEnumerating(component: pointPathComponent, includeControlPoints: true), [pointPathComponent.startingPoint])
-        XCTAssertEqual(arrayByEnumerating(component: pointPathComponent, includeControlPoints: false), [pointPathComponent.startingPoint])
 
-        let expectedCirclePoints = [CGPoint(x: 1, y: 0),
-                                    CGPoint(x: 0, y: 1),
-                                    CGPoint(x: -1, y: 0),
-                                    CGPoint(x: 0, y: -1),
-                                    CGPoint(x: 1, y: 0)]
+        func testSplitFromTo() {
+            // corner case, check that splitting a point always yields the same thin
+            XCTAssertEqual(pointPathComponent, pointPathComponent.split(from: IndexedPathComponentLocation(elementIndex: 0, t: 0.2),
+                                                                        to: IndexedPathComponentLocation(elementIndex: 0, t: 0.8)))
 
-        XCTAssertEqual(arrayByEnumerating(component: circlePathComponent, includeControlPoints: false), expectedCirclePoints)
-        XCTAssertEqual(arrayByEnumerating(component: circlePathComponent, includeControlPoints: true), circlePathComponent.points)
-    }
+            XCTAssertEqual(circlePathComponent.startingIndexedLocation, IndexedPathComponentLocation(elementIndex: 0, t: 0))
+            XCTAssertEqual(circlePathComponent.endingIndexedLocation, IndexedPathComponentLocation(elementIndex: 3, t: 1.0))
+
+            // check case of splitting a single path element
+            let split1 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.3), to: IndexedPathComponentLocation(elementIndex: 1, t: 0.6))
+            let expectedValue1 = PathComponent(curves: [circlePathComponent.element(at: 1).split(from: 0.3, to: 0.6)])
+            XCTAssertEqual(split1, expectedValue1)
+
+            // check case of splitting two path elements where neither is the complete element
+            let split2 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.3), to: IndexedPathComponentLocation(elementIndex: 2, t: 0.6))
+            let expectedValue2 = PathComponent(curves: [circlePathComponent.element(at: 1).split(from: 0.3, to: 1.0), circlePathComponent.element(at: 2).split(from: 0.0, to: 0.6)])
+            XCTAssertEqual(split2, expectedValue2)
+
+            // check case of splitting where there is a full element in the middle
+            let split3StartIndexedLocation = IndexedPathComponentLocation(elementIndex: 1, t: 0.3)
+            let split3EndIndexedLocation = IndexedPathComponentLocation(elementIndex: 3, t: 0.6)
+            let split3 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.3), to: IndexedPathComponentLocation(elementIndex: 3, t: 0.6))
+            let expectedValue3 = PathComponent(curves: [circlePathComponent.element(at: 1).split(from: 0.3, to: 1.0), circlePathComponent.element(at: 2), circlePathComponent.element(at: 3).split(from: 0.0, to: 0.6)])
+            XCTAssertEqual(split3, expectedValue3)
+
+            // misc cases for all code paths
+            let split4 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 3, t: 0), to: IndexedPathComponentLocation(elementIndex: 3, t: 1))
+            let expectedValue4 = PathComponent(curves: [circlePathComponent.element(at: 3)])
+            XCTAssertEqual(split4, expectedValue4)
+
+            let split5 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0), to: IndexedPathComponentLocation(elementIndex: 2, t: 0.5))
+            let expectedValue5 = PathComponent(curves: [circlePathComponent.element(at: 1), circlePathComponent.element(at: 2).split(from: 0, to: 0.5)])
+            XCTAssertEqual(split5, expectedValue5)
+
+            let split6 = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.5), to: IndexedPathComponentLocation(elementIndex: 2, t: 1))
+            let expectedValue6 = PathComponent(curves: [circlePathComponent.element(at: 1).split(from: 0.5, to: 1), circlePathComponent.element(at: 2)])
+            XCTAssertEqual(split6, expectedValue6)
+
+            // check that reversing the order of start and end reverses the split curve
+            let split3alt = circlePathComponent.split(from: split3EndIndexedLocation, to: split3StartIndexedLocation)
+            XCTAssertEqual(split3alt, expectedValue3.reversed())
+
+            // check that splitting over the entire curve gives the same curve back
+            let split7 = circlePathComponent.split(from: circlePathComponent.startingIndexedLocation, to: circlePathComponent.endingIndexedLocation)
+            XCTAssertEqual(split7, circlePathComponent)
+
+            // check that if the starting location is at t=1 we do not create degenerate curves of length zero
+            let split5alt = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 0, t: 1.0), to: IndexedPathComponentLocation(elementIndex: 2, t: 0.5))
+            XCTAssertEqual(split5alt, expectedValue5)
+
+            // check that if the ending location is at t=0 we do not create degenerate curves of length zero
+            let split6alt = circlePathComponent.split(from: IndexedPathComponentLocation(elementIndex: 1, t: 0.5), to: IndexedPathComponentLocation(elementIndex: 3, t: 0))
+            XCTAssertEqual(split6alt, expectedValue6)
+        }
+
+        func testEnumeratePoints() {
+            func arrayByEnumerating(component: PathComponent, includeControlPoints: Bool) -> [Point] {
+                var points: [Point] = []
+                component.enumeratePoints(includeControlPoints: includeControlPoints) { points.append($0) }
+                return points
+            }
+            XCTAssertEqual(arrayByEnumerating(component: pointPathComponent, includeControlPoints: true), [pointPathComponent.startingPoint])
+            XCTAssertEqual(arrayByEnumerating(component: pointPathComponent, includeControlPoints: false), [pointPathComponent.startingPoint])
+
+            let expectedCirclePoints = [Point(x: 1, y: 0),
+                                        Point(x: 0, y: 1),
+                                        Point(x: -1, y: 0),
+                                        Point(x: 0, y: -1),
+                                        Point(x: 1, y: 0)]
+
+            XCTAssertEqual(arrayByEnumerating(component: circlePathComponent, includeControlPoints: false), expectedCirclePoints)
+            XCTAssertEqual(arrayByEnumerating(component: circlePathComponent, includeControlPoints: true), circlePathComponent.points)
+        }
     #endif
 }

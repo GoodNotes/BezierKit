@@ -1,22 +1,19 @@
 //
-//  Path+Project.swift
+//  Path+Projection.swift
 //  BezierKit
 //
 //  Created by Holmes Futrell on 11/23/20.
 //  Copyright © 2020 Holmes Futrell. All rights reserved.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
 public extension Path {
-    private typealias ComponentTuple = (component: PathComponent, index: Int, upperBound: CGFloat)
-    private typealias Candidate = (point: CGPoint, location: IndexedPathLocation)
-    private func searchForClosestLocation(to point: CGPoint, maximumDistance: CGFloat, requireBest: Bool) -> (point: CGPoint, location: IndexedPathLocation)? {
+    private typealias ComponentTuple = (component: PathComponent, index: Int, upperBound: Double)
+    private typealias Candidate = (point: Point, location: IndexedPathLocation)
+    private func searchForClosestLocation(to point: Point, maximumDistance: Double, requireBest: Bool) -> (point: Point, location: IndexedPathLocation)? {
         // sort the components by proximity to avoid searching distant components later on
-        let tuples: [ComponentTuple] = self.components.enumerated().map { i, component in
+        let tuples: [ComponentTuple] = components.enumerated().map { i, component in
             let boundingBox = component.boundingBox
             let upper = boundingBox.upperBoundOfDistance(to: point)
             return (component: component, index: i, upperBound: upper)
@@ -27,7 +24,8 @@ public extension Path {
         for next in tuples {
             guard let projection = next.component.searchForClosestLocation(to: point,
                                                                            maximumDistance: maximumDistance,
-                                                                           requireBest: requireBest) else {
+                                                                           requireBest: requireBest)
+            else {
                 continue
             }
             let projectionDistance = distance(point, projection.point)
@@ -44,28 +42,30 @@ public extension Path {
         }
         return nil
     }
-    func project(_ point: CGPoint) -> (point: CGPoint, location: IndexedPathLocation)? {
-        return self.searchForClosestLocation(to: point, maximumDistance: .infinity, requireBest: true)
+
+    func project(_ point: Point) -> (point: Point, location: IndexedPathLocation)? {
+        return searchForClosestLocation(to: point, maximumDistance: .infinity, requireBest: true)
     }
 
-    func pointIsWithinDistanceOfBoundary(_ point: CGPoint, distance: CGFloat) -> Bool {
-        return self.searchForClosestLocation(to: point, maximumDistance: distance, requireBest: false) != nil
+    func pointIsWithinDistanceOfBoundary(_ point: Point, distance: Double) -> Bool {
+        return searchForClosestLocation(to: point, maximumDistance: distance, requireBest: false) != nil
     }
 }
 
 public extension PathComponent {
     private func anyLocation(in node: BoundingBoxHierarchy.Node) -> IndexedPathComponentLocation {
         switch node.type {
-        case .leaf(let elementIndex):
+        case let .leaf(elementIndex):
             return IndexedPathComponentLocation(elementIndex: elementIndex, t: 0)
-        case .internal(let startingElementIndex, _):
+        case let .internal(startingElementIndex, _):
             return IndexedPathComponentLocation(elementIndex: startingElementIndex, t: 0)
         }
     }
-    fileprivate func searchForClosestLocation(to point: CGPoint, maximumDistance: CGFloat, requireBest: Bool) -> (point: CGPoint, location: IndexedPathComponentLocation)? {
+
+    fileprivate func searchForClosestLocation(to point: Point, maximumDistance: Double, requireBest: Bool) -> (point: Point, location: IndexedPathComponentLocation)? {
         var bestSoFar: IndexedPathComponentLocation?
-        var maximumDistance: CGFloat = maximumDistance
-        self.bvh.visit { node, _ in
+        var maximumDistance: Double = maximumDistance
+        bvh.visit { node, _ in
             guard requireBest == true || bestSoFar == nil else {
                 return false // we're done already
             }
@@ -82,7 +82,7 @@ public extension PathComponent {
                     return false
                 }
             }
-            if case .leaf(let elementIndex) = node.type {
+            if case let .leaf(elementIndex) = node.type {
                 let curve = self.element(at: elementIndex)
                 let projection = curve.project(point)
                 let distanceToCurve = distance(point, projection.point)
@@ -98,15 +98,16 @@ public extension PathComponent {
         }
         return nil
     }
-    func project(_ point: CGPoint) -> (point: CGPoint, location: IndexedPathComponentLocation) {
-        guard let result = self.searchForClosestLocation(to: point, maximumDistance: .infinity, requireBest: true) else {
+
+    func project(_ point: Point) -> (point: Point, location: IndexedPathComponentLocation) {
+        guard let result = searchForClosestLocation(to: point, maximumDistance: .infinity, requireBest: true) else {
             assertionFailure("expected non-empty result")
-            return (point: self.startingPoint, self.startingIndexedLocation)
+            return (point: startingPoint, startingIndexedLocation)
         }
         return result
     }
 
-    func pointIsWithinDistanceOfBoundary(_ point: CGPoint, distance: CGFloat) -> Bool {
-        return self.searchForClosestLocation(to: point, maximumDistance: distance, requireBest: false) != nil
+    func pointIsWithinDistanceOfBoundary(_ point: Point, distance: Double) -> Bool {
+        return searchForClosestLocation(to: point, maximumDistance: distance, requireBest: false) != nil
     }
 }

@@ -6,12 +6,11 @@
 //  Copyright © 2020 Holmes Futrell. All rights reserved.
 //
 
-import XCTest
 @testable import BezierKit
+import XCTest
 
 class PolynomialTests: XCTestCase {
-
-    let accuracy: CGFloat = 1.0e-5
+    let accuracy: Double = 1.0e-5
 
     func testEvaluation() {
         let point = BernsteinPolynomial0(b0: 3.0)
@@ -44,7 +43,7 @@ class PolynomialTests: XCTestCase {
         let polynomial = BernsteinPolynomial1(b0: -3, b1: 2)
         let roots = findDistinctRoots(of: polynomial, between: -1, and: 1)
         XCTAssertEqual(roots.count, 1)
-        XCTAssertEqual(roots[0], CGFloat(0.6), accuracy: accuracy)
+        XCTAssertEqual(roots[0], Double(0.6), accuracy: accuracy)
     }
 
     func testDegree2() {
@@ -57,7 +56,7 @@ class PolynomialTests: XCTestCase {
     func testDegree3() {
         // x^3 - 6x^2 + 11x - 6
         let polynomial = BernsteinPolynomial3(b0: -6, b1: -7.0 / 3.0, b2: -2.0 / 3.0, b3: 0)
-        XCTAssertEqual(polynomial.coefficients, [-6, CGFloat(-7.0 / 3.0), CGFloat(-2.0 / 3.0), 0.0])
+        XCTAssertEqual(polynomial.coefficients, [-6, Double(-7.0 / 3.0), Double(-2.0 / 3.0), 0.0])
         let roots = findDistinctRoots(of: polynomial, between: 0, and: 4)
         XCTAssertEqual(roots[0], 1, accuracy: accuracy)
         XCTAssertEqual(roots[1], 2, accuracy: accuracy)
@@ -85,24 +84,25 @@ class PolynomialTests: XCTestCase {
 
     func testDegree4() {
         // x^4 - 2.44x^2 + 1.44
-        let polynomial = BernsteinPolynomial4(b0: 1.44, b1: 1.44, b2: CGFloat(1.44 - 1.22 / 3), b3: 0.22, b4: 0)
-        XCTAssertEqual(polynomial.coefficients, [1.44, 1.44, CGFloat(1.44 - 1.22 / 3), 0.22, 0])
+        let polynomial = BernsteinPolynomial4(b0: 1.44, b1: 1.44, b2: Double(1.44 - 1.22 / 3), b3: 0.22, b4: 0)
+        XCTAssertEqual(polynomial.coefficients, [1.44, 1.44, Double(1.44 - 1.22 / 3), 0.22, 0])
         let roots = findDistinctRoots(of: polynomial, between: -2, and: 2)
         XCTAssertEqual(roots[0], -1.2, accuracy: accuracy)
         XCTAssertEqual(roots[1], -1, accuracy: accuracy)
         XCTAssertEqual(roots[2], 1, accuracy: accuracy)
         XCTAssertEqual(roots[3], 1.2, accuracy: accuracy)
     }
-    // Skip on platforms where CGFloat is 32bit
+
+    // Skip on platforms where Double is 32bit
     #if !(arch(i386) || arch(arm) || arch(wasm32))
-    func testDegree4RepeatedRoots() {
-        // x^4 - 2x^2 + 1
-        let polynomial = BernsteinPolynomial4(b0: 1, b1: 1, b2: 2.0 / 3.0, b3: 0, b4: 0)
-        let roots = findDistinctRoots(of: polynomial, between: -2, and: 2)
-        XCTAssertEqual(roots.count, 2)
-        XCTAssertEqual(roots[0], -1, accuracy: accuracy)
-        XCTAssertEqual(roots[1], 1, accuracy: accuracy)
-    }
+        func testDegree4RepeatedRoots() {
+            // x^4 - 2x^2 + 1
+            let polynomial = BernsteinPolynomial4(b0: 1, b1: 1, b2: 2.0 / 3.0, b3: 0, b4: 0)
+            let roots = findDistinctRoots(of: polynomial, between: -2, and: 2)
+            XCTAssertEqual(roots.count, 2)
+            XCTAssertEqual(roots[0], -1, accuracy: accuracy)
+            XCTAssertEqual(roots[1], 1, accuracy: accuracy)
+        }
     #endif
     func testDegree5() {
         // 0.2x^5 - 0.813333x^3 - 8.56x
@@ -115,7 +115,7 @@ class PolynomialTests: XCTestCase {
     }
 
     func testDegree4RealWorldIssue() {
-        let polynomial = BernsteinPolynomial4(b0: 1819945.4373168945, b1: -3353335.8194732666, b2: 3712712.6330566406, b3: -2836657.1703338623, b4: 2483314.5947265625)
+        let polynomial = BernsteinPolynomial4(b0: 1_819_945.4373168945, b1: -3_353_335.8194732666, b2: 3_712_712.6330566406, b3: -2_836_657.1703338623, b4: 2_483_314.5947265625)
         let roots = findDistinctRootsInUnitInterval(of: polynomial)
         XCTAssertEqual(roots.count, 2)
         XCTAssertEqual(roots[0], 0.15977874432923783, accuracy: 1.0e-5)
@@ -139,7 +139,7 @@ class PolynomialTests: XCTestCase {
         // the equation has 1st, 2nd, 3rd, and 4th derivative equal to zero
         // which means that only a small portion of the interval can be clipped
         // off. This means the code always takes the divide and conquer path.
-        let accuracy: CGFloat = 1.0e-5
+        let accuracy = 1.0e-5
         let polynomial = BernsteinPolynomialN(coefficients: [0, 0, 0, 0, 0, -1])
         let configuration = RootFindingConfiguration(errorThreshold: accuracy)
         let roots = polynomial.distinctRealRootsInUnitInterval(configuration: configuration)

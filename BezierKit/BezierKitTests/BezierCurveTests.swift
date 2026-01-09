@@ -6,11 +6,10 @@
 //  Copyright © 2017 Holmes Futrell. All rights reserved.
 //
 
-import XCTest
 @testable import BezierKit
+import XCTest
 
 class BezierCurveTests: XCTestCase {
-
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -23,12 +22,12 @@ class BezierCurveTests: XCTestCase {
 
     func testEquality() {
         // two lines that are equal
-        let l1: BezierCurve = LineSegment(p0: CGPoint(x: 0, y: 1), p1: CGPoint(x: 2, y: 1))
-        let l2: BezierCurve = LineSegment(p0: CGPoint(x: 0, y: 1), p1: CGPoint(x: 2, y: 1))
+        let l1: BezierCurve = LineSegment(p0: Point(x: 0, y: 1), p1: Point(x: 2, y: 1))
+        let l2: BezierCurve = LineSegment(p0: Point(x: 0, y: 1), p1: Point(x: 2, y: 1))
         XCTAssert(l1 == l2)
 
         // a line that isn't equal
-        let l3: BezierCurve = LineSegment(p0: CGPoint(x: 0, y: 1), p1: CGPoint(x: 2, y: 2))
+        let l3: BezierCurve = LineSegment(p0: Point(x: 0, y: 1), p1: Point(x: 2, y: 2))
         XCTAssertFalse(l1 == l3)
 
         // a quadratic made from l1, different order, not equal!
@@ -38,30 +37,30 @@ class BezierCurveTests: XCTestCase {
 
     func testScaleDistance() {
         // line segment
-        let epsilon: CGFloat = 1.0e-5
-        let l = LineSegment(p0: CGPoint(x: 1.0, y: 2.0), p1: CGPoint(x: 5.0, y: 6.0))
+        let epsilon = 1.0e-5
+        let l = LineSegment(p0: Point(x: 1.0, y: 2.0), p1: Point(x: 5.0, y: 6.0))
         let ls = l.scale(distance: sqrt(2))! // (moves line up and left by 1,1)
-        let expectedLine = LineSegment(p0: CGPoint(x: 0.0, y: 3.0), p1: CGPoint(x: 4.0, y: 7.0))
+        let expectedLine = LineSegment(p0: Point(x: 0.0, y: 3.0), p1: Point(x: 4.0, y: 7.0))
         XCTAssert(BezierKitTestHelpers.curveControlPointsEqual(curve1: ls, curve2: expectedLine, tolerance: epsilon))
         // quadratic
-        let q = QuadraticCurve(p0: CGPoint(x: 1.0, y: 1.0),
-                                     p1: CGPoint(x: 2.0, y: 2.0),
-                                     p2: CGPoint(x: 3.0, y: 1.0))
+        let q = QuadraticCurve(p0: Point(x: 1.0, y: 1.0),
+                               p1: Point(x: 2.0, y: 2.0),
+                               p2: Point(x: 3.0, y: 1.0))
         let qs = q.scale(distance: sqrt(2))!
-        let expectedQuadratic = QuadraticCurve(p0: CGPoint(x: 0.0, y: 2.0),
-                                                p1: CGPoint(x: 2.0, y: 4.0),
-                                                p2: CGPoint(x: 4.0, y: 2.0))
+        let expectedQuadratic = QuadraticCurve(p0: Point(x: 0.0, y: 2.0),
+                                               p1: Point(x: 2.0, y: 4.0),
+                                               p2: Point(x: 4.0, y: 2.0))
         XCTAssert(BezierKitTestHelpers.curveControlPointsEqual(curve1: qs, curve2: expectedQuadratic, tolerance: epsilon))
         // cubic
-        let c = CubicCurve(p0: CGPoint(x: -4.0, y: +0.0),
-                                 p1: CGPoint(x: -2.0, y: +2.0),
-                                 p2: CGPoint(x: +2.0, y: +2.0),
-                                 p3: CGPoint(x: +4.0, y: +0.0))
+        let c = CubicCurve(p0: Point(x: -4.0, y: +0.0),
+                           p1: Point(x: -2.0, y: +2.0),
+                           p2: Point(x: +2.0, y: +2.0),
+                           p3: Point(x: +4.0, y: +0.0))
         let cs = c.scale(distance: 2.0 * sqrt(2))!
-        let expectedCubic = CubicCurve(p0: CGPoint(x: -6.0, y: +2.0),
-                                p1: CGPoint(x: -3.0, y: +5.0),
-                                p2: CGPoint(x: +3.0, y: +5.0),
-                                p3: CGPoint(x: +6.0, y: +2.0))
+        let expectedCubic = CubicCurve(p0: Point(x: -6.0, y: +2.0),
+                                       p1: Point(x: -3.0, y: +5.0),
+                                       p2: Point(x: +3.0, y: +5.0),
+                                       p3: Point(x: +6.0, y: +2.0))
         XCTAssert(BezierKitTestHelpers.curveControlPointsEqual(curve1: cs, curve2: expectedCubic, tolerance: epsilon))
 
         // ensure that scaling a cubic initialized from a line yields the same thing as the line
@@ -76,17 +75,17 @@ class BezierCurveTests: XCTestCase {
     }
 
     func testScaleDistanceDegenerate() {
-        let p = CGPoint(x: 3.14159, y: 2.71828)
+        let p = Point(x: 3.14159, y: 2.71828)
         let curve = CubicCurve(p0: p, p1: p, p2: p, p3: p)
         XCTAssertNil(curve.scale(distance: 2))
     }
 
     func testScaleDistanceEdgeCase() {
-        let a = CGPoint(x: 0, y: 0)
-        let b = CGPoint(x: 1, y: 0)
+        let a = Point(x: 0, y: 0)
+        let b = Point(x: 1, y: 0)
         let cubic = CubicCurve(p0: a, p1: a, p2: b, p3: b)
         let result = cubic.scale(distance: 1)
-        let offset = CGPoint(x: 0, y: 1)
+        let offset = Point(x: 0, y: 1)
         let aOffset = a + offset
         let bOffset = b + offset
         let expectedResult = CubicCurve(p0: aOffset, p1: aOffset, p2: bOffset, p3: bOffset)
@@ -95,55 +94,56 @@ class BezierCurveTests: XCTestCase {
 
     func testOffsetDistance() {
         // line segments (or isLinear) have a separate codepath, so be sure to test those
-        let epsilon: CGFloat = 1.0e-6
-        let c1 = CubicCurve(lineSegment: LineSegment(p0: CGPoint(x: 0.0, y: 0.0), p1: CGPoint(x: 1.0, y: 1.0)))
+        let epsilon = 1.0e-6
+        let c1 = CubicCurve(lineSegment: LineSegment(p0: Point(x: 0.0, y: 0.0), p1: Point(x: 1.0, y: 1.0)))
         let c1Offset = c1.offset(distance: sqrt(2))
-        let expectedOffset1 = CubicCurve(lineSegment: LineSegment(p0: CGPoint(x: -1.0, y: 1.0), p1: CGPoint(x: 0.0, y: 2.0)))
+        let expectedOffset1 = CubicCurve(lineSegment: LineSegment(p0: Point(x: -1.0, y: 1.0), p1: Point(x: 0.0, y: 2.0)))
         XCTAssertEqual(c1Offset.count, 1)
         XCTAssert(BezierKitTestHelpers.curveControlPointsEqual(curve1: c1Offset[0] as! CubicCurve, curve2: expectedOffset1, tolerance: epsilon))
         // next test a non-simple curve
-        let c2 = CubicCurve(p0: CGPoint(x: 1.0, y: 1.0), p1: CGPoint(x: 2.0, y: 2.0), p2: CGPoint(x: 3.0, y: 2.0), p3: CGPoint(x: 4.0, y: 1.0))
+        let c2 = CubicCurve(p0: Point(x: 1.0, y: 1.0), p1: Point(x: 2.0, y: 2.0), p2: Point(x: 3.0, y: 2.0), p3: Point(x: 4.0, y: 1.0))
         let c2Offset = c2.offset(distance: sqrt(2))
-        for i in 0..<c2Offset.count {
+        for i in 0 ..< c2Offset.count {
             let c = c2Offset[i]
             XCTAssert(c.simple)
             if i == 0 {
                 // segment starts where un-reduced segment started (after ofsetting)
-                XCTAssert(distance(c.startingPoint, CGPoint(x: 0.0, y: 2.0)) < epsilon)
+                XCTAssert(distance(c.startingPoint, Point(x: 0.0, y: 2.0)) < epsilon)
             } else {
                 // segment starts where last ended
-                XCTAssertEqual(c.startingPoint, c2Offset[i-1].endingPoint)
+                XCTAssertEqual(c.startingPoint, c2Offset[i - 1].endingPoint)
             }
             if i == c2Offset.count - 1 {
                 // segment ends where un-reduced segment ended (after ofsetting)
-                XCTAssert(distance(c.endingPoint, CGPoint(x: 5.0, y: 2.0)) < epsilon)
+                XCTAssert(distance(c.endingPoint, Point(x: 5.0, y: 2.0)) < epsilon)
             }
         }
     }
 
     func testOffsetTimeDistance() {
-        let epsilon: CGFloat = 1.0e-6
-        let q = QuadraticCurve(p0: CGPoint(x: 1.0, y: 1.0),
-                                     p1: CGPoint(x: 2.0, y: 2.0),
-                                     p2: CGPoint(x: 3.0, y: 1.0))
+        let epsilon = 1.0e-6
+        let q = QuadraticCurve(p0: Point(x: 1.0, y: 1.0),
+                               p1: Point(x: 2.0, y: 2.0),
+                               p2: Point(x: 3.0, y: 1.0))
         let p0 = q.offset(t: 0.0, distance: sqrt(2))
         let p1 = q.offset(t: 0.5, distance: 1.5)
         let p2 = q.offset(t: 1.0, distance: sqrt(2))
-        XCTAssert(distance(p0, CGPoint(x: 0.0, y: 2.0)) < epsilon)
-        XCTAssert(distance(p1, CGPoint(x: 2.0, y: 3.0)) < epsilon)
-        XCTAssert(distance(p2, CGPoint(x: 4.0, y: 2.0)) < epsilon)
+        XCTAssert(distance(p0, Point(x: 0.0, y: 2.0)) < epsilon)
+        XCTAssert(distance(p1, Point(x: 2.0, y: 3.0)) < epsilon)
+        XCTAssert(distance(p2, Point(x: 4.0, y: 2.0)) < epsilon)
     }
 
-    static let lineSegmentForOutlining = LineSegment(p0: CGPoint(x: -10, y: -5), p1: CGPoint(x: 20, y: 10))
+    static let lineSegmentForOutlining = LineSegment(p0: Point(x: -10, y: -5), p1: Point(x: 20, y: 10))
 
     // swiftlint:disable large_tuple
-    private func lineOffsets(_ lineSegment: LineSegment, _ d1: CGFloat, _ d2: CGFloat, _ d3: CGFloat, _ d4: CGFloat) -> (CGPoint, CGPoint, CGPoint, CGPoint) {
+    private func lineOffsets(_ lineSegment: LineSegment, _ d1: Double, _ d2: Double, _ d3: Double, _ d4: Double) -> (Point, Point, Point, Point) {
         let o0 = lineSegment.startingPoint + d1 * lineSegment.normal(at: 0)
         let o1 = lineSegment.endingPoint + d3 * lineSegment.normal(at: 1)
         let o2 = lineSegment.endingPoint - d4 * lineSegment.normal(at: 1)
         let o3 = lineSegment.startingPoint - d2 * lineSegment.normal(at: 0)
         return (o0, o1, o2, o3)
     }
+
     // swiftlint:enable large_tuple
 
     func testOutlineDistance() {
@@ -154,17 +154,17 @@ class BezierCurveTests: XCTestCase {
 
         let (o0, o1, o2, o3) = lineOffsets(lineSegment, 1, 1, 1, 1)
 
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 0), matchesCurve: LineSegment(p0: o3, p1: o0)))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 1), matchesCurve: LineSegment(p0: o0, p1: o1)))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 2), matchesCurve: LineSegment(p0: o1, p1: o2)))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 3), matchesCurve: LineSegment(p0: o2, p1: o3)))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 0), matchesCurve: LineSegment(p0: o3, p1: o0)))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 1), matchesCurve: LineSegment(p0: o0, p1: o1)))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 2), matchesCurve: LineSegment(p0: o1, p1: o2)))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 3), matchesCurve: LineSegment(p0: o2, p1: o3)))
     }
 
     func testOutlineDistanceAlongNormalDistanceOppositeNormal() {
         //  If two distance values are given, the outline is generated at distance d1 on along the normal, and d2 along the anti-normal.
         let lineSegment = BezierCurveTests.lineSegmentForOutlining
-        let distanceAlongNormal: CGFloat = 1
-        let distanceOppositeNormal: CGFloat = 2
+        let distanceAlongNormal: Double = 1
+        let distanceOppositeNormal: Double = 2
         let outline: PathComponent = lineSegment.outline(distanceAlongNormal: distanceAlongNormal, distanceOppositeNormal: distanceOppositeNormal)
         XCTAssertEqual(outline.numberOfElements, 4)
 
@@ -173,62 +173,62 @@ class BezierCurveTests: XCTestCase {
         let o2 = lineSegment.endingPoint - distanceOppositeNormal * lineSegment.normal(at: 1)
         let o3 = lineSegment.startingPoint - distanceOppositeNormal * lineSegment.normal(at: 0)
 
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 0), matchesCurve: LineSegment(p0: o3, p1: o0)))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 1), matchesCurve: LineSegment(p0: o0, p1: o1)))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 2), matchesCurve: LineSegment(p0: o1, p1: o2)))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 3), matchesCurve: LineSegment(p0: o2, p1: o3)))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 0), matchesCurve: LineSegment(p0: o3, p1: o0)))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 1), matchesCurve: LineSegment(p0: o0, p1: o1)))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 2), matchesCurve: LineSegment(p0: o1, p1: o2)))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 3), matchesCurve: LineSegment(p0: o2, p1: o3)))
     }
 
     func testOutlineQuadraticNormalsParallel() {
         // this tests a special corner case of outlines where endpoint normals are parallel
 
-        let q = QuadraticCurve(p0: CGPoint(x: 0.0, y: 0.0), p1: CGPoint(x: 5.0, y: 0.0), p2: CGPoint(x: 10.0, y: 0.0))
+        let q = QuadraticCurve(p0: Point(x: 0.0, y: 0.0), p1: Point(x: 5.0, y: 0.0), p2: Point(x: 10.0, y: 0.0))
         let outline: PathComponent = q.outline(distance: 1)
 
-        let expectedSegment1 = LineSegment(p0: CGPoint(x: 0, y: -1), p1: CGPoint(x: 0, y: 1))
-        let expectedSegment2 = LineSegment(p0: CGPoint(x: 0, y: 1), p1: CGPoint(x: 10, y: 1))
-        let expectedSegment3 = LineSegment(p0: CGPoint(x: 10, y: 1), p1: CGPoint(x: 10, y: -1))
-        let expectedSegment4 = LineSegment(p0: CGPoint(x: 10, y: -1), p1: CGPoint(x: 0, y: -1))
+        let expectedSegment1 = LineSegment(p0: Point(x: 0, y: -1), p1: Point(x: 0, y: 1))
+        let expectedSegment2 = LineSegment(p0: Point(x: 0, y: 1), p1: Point(x: 10, y: 1))
+        let expectedSegment3 = LineSegment(p0: Point(x: 10, y: 1), p1: Point(x: 10, y: -1))
+        let expectedSegment4 = LineSegment(p0: Point(x: 10, y: -1), p1: Point(x: 0, y: -1))
 
         XCTAssertEqual(outline.numberOfElements, 4)
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 0), matchesCurve: expectedSegment1 ))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 1), matchesCurve: expectedSegment2 ))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 2), matchesCurve: expectedSegment3 ))
-        XCTAssert( BezierKitTestHelpers.curve(outline.element(at: 3), matchesCurve: expectedSegment4 ))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 0), matchesCurve: expectedSegment1))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 1), matchesCurve: expectedSegment2))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 2), matchesCurve: expectedSegment3))
+        XCTAssert(BezierKitTestHelpers.curve(outline.element(at: 3), matchesCurve: expectedSegment4))
     }
 
     func testOutlineShapesDistance() {
         let lineSegment = BezierCurveTests.lineSegmentForOutlining
-        let distanceAlongNormal: CGFloat = 1
+        let distanceAlongNormal: Double = 1
         let shapes: [Shape] = lineSegment.outlineShapes(distance: distanceAlongNormal)
         XCTAssertEqual(shapes.count, 1)
         let (o0, o1, o2, o3) = lineOffsets(lineSegment, distanceAlongNormal, distanceAlongNormal, distanceAlongNormal, distanceAlongNormal)
         let expectedShape = Shape(LineSegment(p0: o0, p1: o1), LineSegment(p0: o2, p1: o3), false, false) // shape made from lines with real (non-virtual) caps
-        XCTAssertTrue( BezierKitTestHelpers.shape(shapes[0], matchesShape: expectedShape) )
+        XCTAssertTrue(BezierKitTestHelpers.shape(shapes[0], matchesShape: expectedShape))
     }
 
     func testOutlineShapesDistanceAlongNormalDistanceOppositeNormal() {
         let lineSegment = BezierCurveTests.lineSegmentForOutlining
-        let distanceAlongNormal: CGFloat = 1
-        let distanceOppositeNormal: CGFloat = 2
+        let distanceAlongNormal: Double = 1
+        let distanceOppositeNormal: Double = 2
         let shapes: [Shape] = lineSegment.outlineShapes(distanceAlongNormal: distanceAlongNormal, distanceOppositeNormal: distanceOppositeNormal)
         XCTAssertEqual(shapes.count, 1)
         let (o0, o1, o2, o3) = lineOffsets(lineSegment, distanceAlongNormal, distanceOppositeNormal, distanceAlongNormal, distanceOppositeNormal)
         let expectedShape = Shape(LineSegment(p0: o0, p1: o1), LineSegment(p0: o2, p1: o3), false, false) // shape made from lines with real (non-virtual) caps
-        XCTAssertTrue( BezierKitTestHelpers.shape(shapes[0], matchesShape: expectedShape) )
+        XCTAssertTrue(BezierKitTestHelpers.shape(shapes[0], matchesShape: expectedShape))
     }
 
     func testCubicCubicIntersectionEndpoints() {
         // these two cubics intersect only at the endpoints
-        let epsilon: CGFloat = 1.0e-3
-        let cubic1 = CubicCurve(p0: CGPoint(x: 0.0, y: 0.0),
-                                      p1: CGPoint(x: 1.0, y: 1.0),
-                                      p2: CGPoint(x: 2.0, y: 1.0),
-                                      p3: CGPoint(x: 3.0, y: 0.0))
-        let cubic2 = CubicCurve(p0: CGPoint(x: 3.0, y: 0.0),
-                                      p1: CGPoint(x: 2.0, y: -1.0),
-                                      p2: CGPoint(x: 1.0, y: -1.0),
-                                      p3: CGPoint(x: 0.0, y: 0.0))
+        let epsilon = 1.0e-3
+        let cubic1 = CubicCurve(p0: Point(x: 0.0, y: 0.0),
+                                p1: Point(x: 1.0, y: 1.0),
+                                p2: Point(x: 2.0, y: 1.0),
+                                p3: Point(x: 3.0, y: 0.0))
+        let cubic2 = CubicCurve(p0: Point(x: 3.0, y: 0.0),
+                                p1: Point(x: 2.0, y: -1.0),
+                                p2: Point(x: 1.0, y: -1.0),
+                                p3: Point(x: 0.0, y: 0.0))
         let i = cubic1.intersections(with: cubic2, accuracy: epsilon)
         XCTAssertEqual(i.count, 2, "start and end points should intersect!")
         XCTAssertEqual(i[0].t1, 0.0)
@@ -238,7 +238,7 @@ class BezierCurveTests: XCTestCase {
     }
 
     private func curveSelfIntersects(_ curve: CubicCurve) -> Bool {
-        let epsilon: CGFloat = 1.0e-5
+        let epsilon = 1.0e-5
         let result = curve.selfIntersects
         if result == true {
             // check consistency
@@ -251,75 +251,74 @@ class BezierCurveTests: XCTestCase {
     }
 
     func testCubicSelfIntersection() {
+        let curve = CubicCurve(p0: Point(x: 0, y: 0),
+                               p1: Point(x: 0, y: 1),
+                               p2: Point(x: 1, y: 1),
+                               p3: Point(x: 1, y: 1))
 
-        let curve = CubicCurve(p0: CGPoint(x: 0, y: 0),
-                               p1: CGPoint(x: 0, y: 1),
-                               p2: CGPoint(x: 1, y: 1),
-                               p3: CGPoint(x: 1, y: 1))
-
-        func selfIntersectsWithEndpointMoved(to point: CGPoint) -> Bool {
+        func selfIntersectsWithEndpointMoved(to point: Point) -> Bool {
             var copy = curve
             copy.p3 = point
             return curveSelfIntersects(copy)
         }
 
         // check basic cases with no self-intersections
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0.5, y: 2)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0.5, y: 0.5)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0.5, y: -1)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: -0.5, y: -1)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: -1, y: 0.5)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: -1, y: 2)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0.5, y: 2)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0.5, y: 0.5)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0.5, y: -1)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: -0.5, y: -1)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: -1, y: 0.5)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: -1, y: 2)))
 
         // check basic cases with self-intersections
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0.25, y: 0.75)))
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: -1, y: -0.5)))
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: -0.5, y: 0.25)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: 0.25, y: 0.75)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: -1, y: -0.5)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: -0.5, y: 0.25)))
 
         // check edge cases around (0, 0.75)
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0, y: 0.76)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0, y: 0.75)))
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0, y: 0.74)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0, y: 0.76)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0, y: 0.75)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: 0, y: 0.74)))
 
         // check for edge cases around (-1, 0)
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: -1.01, y: 0)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: -1, y: 0)))
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: -0.99, y: 0)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: -1.01, y: 0)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: -1, y: 0)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: -0.99, y: 0)))
 
         // check for edge cases around (-0.5, 0.58)
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: -0.5, y: -0.59)))
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: -0.5, y: -0.58)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: -0.5, y: -0.59)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: -0.5, y: -0.58)))
 
         // check for edge cases around (0,0)
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0, y: 0)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0.01, y: 0)))
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0, y: 0.01)))
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: -0.01, y: 0)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0, y: -0.01)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: 0, y: 0)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0.01, y: 0)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: 0, y: 0.01)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: -0.01, y: 0)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0, y: -0.01)))
 
         // check for edge cases around (1,1)
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 1, y: 1)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0.95, y: 0.9991)))
-        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0.95, y: 0.9993)))
-        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: CGPoint(x: 0.95, y: 0.9995)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 1, y: 1)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0.95, y: 0.9991)))
+        XCTAssertTrue(selfIntersectsWithEndpointMoved(to: Point(x: 0.95, y: 0.9993)))
+        XCTAssertFalse(selfIntersectsWithEndpointMoved(to: Point(x: 0.95, y: 0.9995)))
 
         // check degenerate case where all points equal
-        let point = CGPoint(x: 3, y: 4)
+        let point = Point(x: 3, y: 4)
         let degenerateCurve = CubicCurve(p0: point, p1: point, p2: point, p3: point)
         XCTAssertFalse(curveSelfIntersects(degenerateCurve))
 
         // check line segment case
-        let lineSegment = CubicCurve(lineSegment: LineSegment(p0: CGPoint(x: 1, y: 2), p1: CGPoint(x: 3, y: 4)))
+        let lineSegment = CubicCurve(lineSegment: LineSegment(p0: Point(x: 1, y: 2), p1: Point(x: 3, y: 4)))
         XCTAssertFalse(curveSelfIntersects(lineSegment))
     }
 
     func testCubicSelfIntersectionEdgeCase() {
         // this curve nearly has a "cusp" which causes `reduce()` to fail
         // this failure could prevent detection of the self-intersection in practice
-        let curve = CubicCurve(p0: CGPoint(x: 0.6699848912467168, y: 0.6276580745456783),
-                                p1: CGPoint(x: 0.3985029248079961, y: 0.6770972104768092),
-                                p2: CGPoint(x: 0.6414685401578772, y: 0.8591306876578386),
-                                p3: CGPoint(x: 0.4385385980761747, y: 0.3866255870526274))
+        let curve = CubicCurve(p0: Point(x: 0.6699848912467168, y: 0.6276580745456783),
+                               p1: Point(x: 0.3985029248079961, y: 0.6770972104768092),
+                               p2: Point(x: 0.6414685401578772, y: 0.8591306876578386),
+                               p3: Point(x: 0.4385385980761747, y: 0.3866255870526274))
         XCTAssertTrue(curveSelfIntersects(curve))
     }
 }

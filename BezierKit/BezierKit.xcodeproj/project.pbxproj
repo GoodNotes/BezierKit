@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A91BAF4A2F1135B300DC9D33 /* CoreGraphicsSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91BAF492F1135B300DC9D33 /* CoreGraphicsSupport.swift */; };
+		A91BAF4B2F1135B300DC9D33 /* CoreGraphicsSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A91BAF492F1135B300DC9D33 /* CoreGraphicsSupport.swift */; };
 		FD05111820153EAE000D035E /* BoundingBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD05111720153EAE000D035E /* BoundingBoxTests.swift */; };
 		FD05111920153EAE000D035E /* BoundingBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD05111720153EAE000D035E /* BoundingBoxTests.swift */; };
 		FD06332321E03A58001181B6 /* CGPointTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD06332221E03A58001181B6 /* CGPointTests.swift */; };
@@ -162,6 +164,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A91BAF492F1135B300DC9D33 /* CoreGraphicsSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreGraphicsSupport.swift; sourceTree = "<group>"; };
 		FD05111720153EAE000D035E /* BoundingBoxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoundingBoxTests.swift; sourceTree = "<group>"; };
 		FD06332221E03A58001181B6 /* CGPointTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGPointTests.swift; sourceTree = "<group>"; };
 		FD067AC7246F1200006DA36B /* Polynomial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Polynomial.swift; sourceTree = "<group>"; };
@@ -357,6 +360,7 @@
 		FDB6B3F61EAFD6DF00001C61 /* Library */ = {
 			isa = PBXGroup;
 			children = (
+				A91BAF492F1135B300DC9D33 /* CoreGraphicsSupport.swift */,
 				FD149EB92135CBFF009E791D /* AugmentedGraph.swift */,
 				FDC859622119274A00AF7642 /* BoundingBoxHierarchy.swift */,
 				FDB6B3F71EAFD6DF00001C61 /* BezierCurve.swift */,
@@ -700,6 +704,7 @@
 				FD07BC21261BC97400ED39FF /* RootFinding.swift in Sources */,
 				FDCE99A6223C404E00597989 /* Path+Data.swift in Sources */,
 				FDB6011C25BB9B3700BAB067 /* BezierCurve+Polynomial.swift in Sources */,
+				A91BAF4B2F1135B300DC9D33 /* CoreGraphicsSupport.swift in Sources */,
 				FDC2EB4B2298735C007768FC /* Lock.swift in Sources */,
 				FDA03FE125D21B9C005F7795 /* Path+VectorBoolean.swift in Sources */,
 				FDB6B4071EAFD6DF00001C61 /* Draw.swift in Sources */,
@@ -732,6 +737,7 @@
 				FD07BC20261BC97400ED39FF /* RootFinding.swift in Sources */,
 				FDCE99A5223C404E00597989 /* Path+Data.swift in Sources */,
 				FDB6011B25BB9B3700BAB067 /* BezierCurve+Polynomial.swift in Sources */,
+				A91BAF4A2F1135B300DC9D33 /* CoreGraphicsSupport.swift in Sources */,
 				FDC2EB4A2298735C007768FC /* Lock.swift in Sources */,
 				FDA03FE025D21B9C005F7795 /* Path+VectorBoolean.swift in Sources */,
 				FDB6B4061EAFD6DF00001C61 /* Draw.swift in Sources */,

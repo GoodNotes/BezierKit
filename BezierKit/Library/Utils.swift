@@ -6,18 +6,16 @@
 //  Copyright © 2016 Holmes Futrell. All rights reserved.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
-internal extension Array where Element: Comparable {
+extension Array where Element: Comparable {
     func sortedAndUniqued() -> [Element] {
-        guard self.count > 1 else { return self }
-        return self.sorted().duplicatesRemovedFromSorted()
+        guard count > 1 else { return self }
+        return sorted().duplicatesRemovedFromSorted()
     }
+
     func duplicatesRemovedFromSorted() -> [Element] {
-        return self.indices.compactMap {
+        return indices.compactMap {
             let element = self[$0]
             guard $0 > self.startIndex else { return element }
             guard element != self[$0 - 1] else { return nil }
@@ -26,20 +24,19 @@ internal extension Array where Element: Comparable {
     }
 }
 
-internal class Utils {
+class Utils {
+    private static let binomialTable: [[Double]] = [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                                    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                                                    [1, 2, 1, 0, 0, 0, 0, 0, 0, 0],
+                                                    [1, 3, 3, 1, 0, 0, 0, 0, 0, 0],
+                                                    [1, 4, 6, 4, 1, 0, 0, 0, 0, 0],
+                                                    [1, 5, 10, 10, 5, 1, 0, 0, 0, 0],
+                                                    [1, 6, 15, 20, 15, 6, 1, 0, 0, 0],
+                                                    [1, 7, 21, 35, 35, 21, 7, 1, 0, 0],
+                                                    [1, 8, 28, 56, 70, 56, 28, 8, 1, 0],
+                                                    [1, 9, 36, 84, 126, 126, 84, 36, 9, 1]]
 
-    private static let binomialTable: [[CGFloat]] = [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                                              [1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-                                              [1, 2, 1, 0, 0, 0, 0, 0, 0, 0],
-                                              [1, 3, 3, 1, 0, 0, 0, 0, 0, 0],
-                                              [1, 4, 6, 4, 1, 0, 0, 0, 0, 0],
-                                              [1, 5, 10, 10, 5, 1, 0, 0, 0, 0],
-                                              [1, 6, 15, 20, 15, 6, 1, 0, 0, 0],
-                                              [1, 7, 21, 35, 35, 21, 7, 1, 0, 0],
-                                              [1, 8, 28, 56, 70, 56, 28, 8, 1, 0],
-                                              [1, 9, 36, 84, 126, 126, 84, 36, 9, 1]]
-
-    static func binomialCoefficient(_ n: Int, choose k: Int) -> CGFloat {
+    static func binomialCoefficient(_ n: Int, choose k: Int) -> Double {
         precondition(n >= 0 && k >= 0 && n <= 9 && k <= 9)
         return binomialTable[n][k]
     }
@@ -49,7 +46,7 @@ internal class Utils {
     static let tau: Double = 2.0 * Double.pi
 
     // Legendre-Gauss abscissae with n=24 (x_i values, defined at i=n as the roots of the nth order Legendre polynomial Pn(x))
-    private static let Tvalues: ContiguousArray<CGFloat> = [
+    private static let Tvalues: ContiguousArray<Double> = [
         -0.0640568928626056260850430826247450385909,
         0.0640568928626056260850430826247450385909,
         -0.1911188674736163091586398207570696318404,
@@ -73,11 +70,11 @@ internal class Utils {
         -0.9747285559713094981983919930081690617411,
         0.9747285559713094981983919930081690617411,
         -0.9951872199970213601799974097007368118745,
-        0.9951872199970213601799974097007368118745
+        0.9951872199970213601799974097007368118745,
     ]
 
     // Legendre-Gauss weights with n=24 (w_i values, defined by a function linked to in the Bezier primer article)
-    static let Cvalues: ContiguousArray<CGFloat> = [
+    static let Cvalues: ContiguousArray<Double> = [
         0.1279381953467521569740561652246953718517,
         0.1279381953467521569740561652246953718517,
         0.1258374563468282961213753825111836887264,
@@ -101,56 +98,56 @@ internal class Utils {
         0.0285313886289336631813078159518782864491,
         0.0285313886289336631813078159518782864491,
         0.0123412297999871995468056670700372915759,
-        0.0123412297999871995468056670700372915759
+        0.0123412297999871995468056670700372915759,
     ]
 
-    static func getABC(n: Int, S: CGPoint, B: CGPoint, E: CGPoint, t: CGFloat = 0.5) -> (A: CGPoint, B: CGPoint, C: CGPoint) {
+    static func getABC(n: Int, S: Point, B: Point, E: Point, t: Double = 0.5) -> (A: Point, B: Point, C: Point) {
         let u = Utils.projectionRatio(n: n, t: t)
-        let um = 1-u
-        let C = CGPoint(
-            x: u*S.x + um*E.x,
-            y: u*S.y + um*E.y
+        let um = 1 - u
+        let C = Point(
+            x: u * S.x + um * E.x,
+            y: u * S.y + um * E.y
         )
         let s = Utils.abcRatio(n: n, t: t)
-        let A = CGPoint(
-            x: B.x + (B.x-C.x)/s,
-            y: B.y + (B.y-C.y)/s
+        let A = Point(
+            x: B.x + (B.x - C.x) / s,
+            y: B.y + (B.y - C.y) / s
         )
-        return ( A:A, B:B, C:C )
+        return (A: A, B: B, C: C)
     }
 
-    static func abcRatio(n: Int, t: CGFloat = 0.5) -> CGFloat {
+    static func abcRatio(n: Int, t: Double = 0.5) -> Double {
         // see ratio(t) note on http://pomax.github.io/bezierinfo/#abc
         assert(n == 2 || n == 3)
         if t == 0 || t == 1 {
             return t
         }
-        let bottom = pow(t, CGFloat(n)) + pow(1 - t, CGFloat(n))
+        let bottom = pow(t, Double(n)) + pow(1 - t, Double(n))
         let top = bottom - 1
-        return abs(top/bottom)
+        return abs(top / bottom)
     }
 
-    static func projectionRatio(n: Int, t: CGFloat = 0.5) -> CGFloat {
+    static func projectionRatio(n: Int, t: Double = 0.5) -> Double {
         // see u(t) note on http://pomax.github.io/bezierinfo/#abc
         assert(n == 2 || n == 3)
         if t == 0 || t == 1 {
             return t
         }
-        let top = pow(1.0 - t, CGFloat(n))
-        let bottom = pow(t, CGFloat(n)) + top
-        return top/bottom
+        let top = pow(1.0 - t, Double(n))
+        let bottom = pow(t, Double(n)) + top
+        return top / bottom
     }
 
-    static func map(_ v: CGFloat, _ ds: CGFloat, _ de: CGFloat, _ ts: CGFloat, _ te: CGFloat) -> CGFloat {
+    static func map(_ v: Double, _ ds: Double, _ de: Double, _ ts: Double, _ te: Double) -> Double {
         let t = (v - ds) / (de - ds)
         return t * te + (1 - t) * ts
     }
 
     static func approximately(_ a: Double, _ b: Double, precision: Double) -> Bool {
-        return abs(a-b) <= precision
+        return abs(a - b) <= precision
     }
 
-    static func linesIntersection(_ line1p1: CGPoint, _ line1p2: CGPoint, _ line2p1: CGPoint, _ line2p2: CGPoint) -> CGPoint? {
+    static func linesIntersection(_ line1p1: Point, _ line1p2: Point, _ line2p1: Point, _ line2p2: Point) -> Point? {
         let x1 = line1p1.x; let y1 = line1p1.y
         let x2 = line1p2.x; let y2 = line1p2.y
         let x3 = line2p1.x; let y3 = line2p1.y
@@ -164,11 +161,11 @@ internal class Utils {
     }
 
     // cube root function yielding real roots
-    static private func crt(_ v: Double) -> Double {
-        return (v < 0) ? -pow(-v, 1.0/3.0) : pow(v, 1.0/3.0)
+    private static func crt(_ v: Double) -> Double {
+        return (v < 0) ? -pow(-v, 1.0 / 3.0) : pow(v, 1.0 / 3.0)
     }
 
-    static func clamp(_ x: CGFloat, _ a: CGFloat, _ b: CGFloat) -> CGFloat {
+    static func clamp(_ x: Double, _ a: Double, _ b: Double) -> Double {
         precondition(b >= a)
         if x < a {
             return a
@@ -179,7 +176,7 @@ internal class Utils {
         }
     }
 
-    static func droots(_ p0: CGFloat, _ p1: CGFloat, _ p2: CGFloat, _ p3: CGFloat, callback: (CGFloat) -> Void) {
+    static func droots(_ p0: Double, _ p1: Double, _ p2: Double, _ p3: Double, callback: (Double) -> Void) {
         // convert the points p0, p1, p2, p3 to a cubic polynomial at^3 + bt^2 + ct + 1 and solve
         // see http://www.trans4mind.com/personal_development/mathematics/polynomials/cubicAlgebra.htm
         let p0 = Double(p0)
@@ -187,13 +184,13 @@ internal class Utils {
         let p2 = Double(p2)
         let p3 = Double(p3)
         let d = -p0 + 3 * p1 - 3 * p2 + p3
-        let smallValue: Double = 1.0e-8
+        let smallValue = 1.0e-8
         guard abs(d) >= smallValue else {
             // solve the quadratic polynomial at^2 + bt + c instead
             let a = (3 * p0 - 6 * p1 + 3 * p2)
             let b = (-3 * p0 + 3 * p1)
             let c = p0
-            droots(CGFloat(c), CGFloat(b / 2.0 + c), CGFloat(a + b + c), callback: callback)
+            droots(Double(c), Double(b / 2.0 + c), Double(a + b + c), callback: callback)
             return
         }
         let a = (3 * p0 - 6 * p1 + 3 * p2) / d
@@ -201,7 +198,7 @@ internal class Utils {
         let c = p0 / d
         let p = (3 * b - a * a) / 3
         let q = (2 * a * a * a - 9 * a * b + 27 * c) / 27
-        let q2 = q/2
+        let q2 = q / 2
         let discriminant = q2 * q2 + p * p * p / 27
         let tinyValue = 1.0e-14
         if discriminant < -tinyValue {
@@ -211,9 +208,9 @@ internal class Utils {
             let phi = acos(cosphi)
             let crtr = crt(r)
             let t1 = 2 * crtr
-            let root1 = CGFloat(t1 * cos((phi + tau) / 3) - a / 3)
-            let root2 = CGFloat(t1 * cos((phi + 2 * tau) / 3) - a / 3)
-            let root3 = CGFloat(t1 * cos(phi / 3) - a / 3)
+            let root1 = Double(t1 * cos((phi + tau) / 3) - a / 3)
+            let root2 = Double(t1 * cos((phi + 2 * tau) / 3) - a / 3)
+            let root3 = Double(t1 * cos(phi / 3) - a / 3)
             callback(root1)
             if root2 > root1 {
                 callback(root2)
@@ -225,11 +222,11 @@ internal class Utils {
             let sd = sqrt(discriminant)
             let u1 = crt(-q2 + sd)
             let v1 = crt(q2 + sd)
-            callback(CGFloat(u1 - v1 - a / 3))
+            callback(Double(u1 - v1 - a / 3))
         } else if discriminant.isNaN == false {
             let u1 = q2 < 0 ? crt(-q2) : -crt(q2)
-            let root1 = CGFloat(2 * u1 - a / 3)
-            let root2 = CGFloat(-u1 - a / 3)
+            let root1 = Double(2 * u1 - a / 3)
+            let root2 = Double(-u1 - a / 3)
             if root1 < root2 {
                 callback(root1)
                 callback(root2)
@@ -242,7 +239,7 @@ internal class Utils {
         }
     }
 
-    static func droots(_ p0: CGFloat, _ p1: CGFloat, _ p2: CGFloat, callback: (CGFloat) -> Void) {
+    static func droots(_ p0: Double, _ p1: Double, _ p2: Double, callback: (Double) -> Void) {
         // quadratic roots are easy
         // do something with each root
         let p0 = Double(p0)
@@ -252,7 +249,7 @@ internal class Utils {
         guard d.isFinite else { return }
         guard abs(d) > epsilon else {
             if p0 != p1 {
-                callback(CGFloat(0.5 * p0 / (p0 - p1)))
+                callback(Double(0.5 * p0 / (p0 - p1)))
             }
             return
         }
@@ -260,8 +257,8 @@ internal class Utils {
         guard radical >= 0 else { return }
         let m1 = sqrt(radical)
         let m2 = p0 - p1
-        let v1 = CGFloat((m2 + m1) / d)
-        let v2 = CGFloat((m2 - m1) / d)
+        let v1 = Double((m2 + m1) / d)
+        let v2 = Double((m2 - m1) / d)
         if v1 < v2 {
             callback(v1)
             callback(v2)
@@ -273,50 +270,51 @@ internal class Utils {
         }
     }
 
-    static func droots(_ p0: CGFloat, _ p1: CGFloat, callback: (CGFloat) -> Void) {
+    static func droots(_ p0: Double, _ p1: Double, callback: (Double) -> Void) {
         guard p0 != p1 else { return }
         callback(p0 / (p0 - p1))
     }
 
-    static func linearInterpolate(_ v1: CGPoint, _ v2: CGPoint, _ t: CGFloat) -> CGPoint {
+    static func linearInterpolate(_ v1: Point, _ v2: Point, _ t: Double) -> Point {
         return v1 + t * (v2 - v1)
     }
 
-    static func linearInterpolate(_ first: CGFloat, _ second: CGFloat, _ t: CGFloat) -> CGFloat {
+    static func linearInterpolate(_ first: Double, _ second: Double, _ t: Double) -> Double {
         return (1 - t) * first + t * second
     }
 
-    static func arcfn(_ t: CGFloat, _ derivativeFn: (_ t: CGFloat) -> CGPoint) -> CGFloat {
+    static func arcfn(_ t: Double, _ derivativeFn: (_ t: Double) -> Point) -> Double {
         let d = derivativeFn(t)
         return d.length
     }
 
-    static func length(_ derivativeFn: (_ t: CGFloat) -> CGPoint) -> CGFloat {
-        let z: CGFloat = 0.5
+    static func length(_ derivativeFn: (_ t: Double) -> Point) -> Double {
+        let z = 0.5
         let len = Utils.Tvalues.count
-        var sum: CGFloat = 0.0
-        for i in 0..<len {
+        var sum = 0.0
+        for i in 0 ..< len {
             let t = z * Utils.Tvalues[i] + z
             sum += Utils.Cvalues[i] * Utils.arcfn(t, derivativeFn)
         }
         return z * sum
     }
 
-    static func angle(o: CGPoint, v1: CGPoint, v2: CGPoint) -> CGFloat {
+    static func angle(o: Point, v1: Point, v2: Point) -> Double {
         let d1 = v1 - o
         let d2 = v2 - o
         return atan2(d1.cross(d2), d1.dot(d2))
     }
 
-    @inline(__always) private static func shouldRecurse<C>(for subcurve: Subcurve<C>, boundingBoxSize: CGPoint, accuracy: CGFloat) -> Bool {
+    @inline(__always) private static func shouldRecurse<C>(for subcurve: Subcurve<C>, boundingBoxSize: Point, accuracy: Double) -> Bool {
         guard subcurve.canSplit else { return false }
         guard boundingBoxSize.x + boundingBoxSize.y >= accuracy else { return false }
-        if MemoryLayout<CGFloat>.size == 4 {
+        if MemoryLayout<Double>.size == 4 {
             let curve = subcurve.curve
             // limit recursion when we exceed Float32 precision
             let midPoint = curve.point(at: 0.5)
             if midPoint == curve.startingPoint ||
-                midPoint == curve.endingPoint {
+                midPoint == curve.endingPoint
+            {
                 guard curve.selfIntersects else { return false }
             }
         }
@@ -329,9 +327,9 @@ internal class Utils {
     static func pairiteration<C1, C2>(_ c1: Subcurve<C1>, _ c2: Subcurve<C2>,
                                       _ c1b: BoundingBox, _ c2b: BoundingBox,
                                       _ results: inout [Intersection],
-                                      _ accuracy: CGFloat,
-                                      _ totalIterations: inout Int) -> Bool {
-
+                                      _ accuracy: Double,
+                                      _ totalIterations: inout Int) -> Bool
+    {
         let maximumIterations = 900
         let maximumIntersections = c1.curve.order * c2.curve.order
 
@@ -381,16 +379,16 @@ internal class Utils {
 
     // swiftlint:enable function_parameter_count
 
-    static func hull(_ p: [CGPoint], _ t: CGFloat) -> [CGPoint] {
+    static func hull(_ p: [Point], _ t: Double) -> [Point] {
         let c: Int = p.count
-        var q: [CGPoint] = p
-        q.reserveCapacity(c * (c+1) / 2) // reserve capacity ahead of time to avoid re-alloc
+        var q: [Point] = p
+        q.reserveCapacity(c * (c + 1) / 2) // reserve capacity ahead of time to avoid re-alloc
         // we linearInterpolate between all points (in-place), until we have 1 point left.
-        var start: Int = 0
+        var start = 0
         for count in (1 ..< c).reversed() {
             let end: Int = start + count
             for i in start ..< end {
-                let pt = Utils.linearInterpolate(q[i], q[i+1], t)
+                let pt = Utils.linearInterpolate(q[i], q[i + 1], t)
                 q.append(pt)
             }
             start = end + 1
@@ -400,26 +398,5 @@ internal class Utils {
 }
 
 #if !canImport(CoreGraphics)
-public typealias NSInteger = Int
-public typealias CGAffineTransform = AffineTransform
-
-extension CGPoint {
-    func applying(_ t: CGAffineTransform) -> CGPoint {
-        t.transform(self)
-    }
-}
-
-extension CGAffineTransform {
-    init(scaleX sx: CGFloat, y sy: CGFloat) {
-        self.init(scaleByX: sx, byY: sy)
-    }
-
-    init(translationX tx: CGFloat, y ty: CGFloat) {
-        self.init(translationByX: tx, byY: ty)
-    }
-
-    init(a: CGFloat, b: CGFloat, c: CGFloat, d: CGFloat, tx: CGFloat, ty: CGFloat) {
-        self.init(m11: a, m12: b, m21: c, m22: d, tX: tx, tY: ty)
-    }
-}
+    public typealias NSInteger = Int
 #endif

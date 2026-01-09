@@ -6,46 +6,43 @@
 //  Copyright © 2020 Holmes Futrell. All rights reserved.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
 public protocol BernsteinPolynomial: Equatable {
-    func value(at x: CGFloat) -> CGFloat
+    func value(at x: Double) -> Double
     var order: Int { get }
-    var coefficients: [CGFloat] { get }
-//    var last: CGFloat { get }
-//    var first: CGFloat { get }
-//    func enumerated(block: (Int, CGFloat) -> Void)
+    var coefficients: [Double] { get }
+//    var last: Double { get }
+//    var first: Double { get }
+//    func enumerated(block: (Int, Double) -> Void)
     associatedtype NextLowerOrderPolynomial: BernsteinPolynomial
     /// a polynomial of the next lower order where each coefficient `b[i]` is defined by `a1 * b[i] + a2 * b[i+1]`
-    func difference(a1: CGFloat, a2: CGFloat) -> NextLowerOrderPolynomial
+    func difference(a1: Double, a2: Double) -> NextLowerOrderPolynomial
     /// reduces the polynomial by repeatedly applying `difference` until left with a constant value
-    func reduce(a1: CGFloat, a2: CGFloat) -> CGFloat
+    func reduce(a1: Double, a2: Double) -> Double
     var derivative: NextLowerOrderPolynomial { get }
-//    init(_ d: Difference, last: CGFloat)
-//    init(first: CGFloat, _ d: Difference)
+//    init(_ d: Difference, last: Double)
+//    init(first: Double, _ d: Difference)
 //    func reversed() -> Self
-//    func split(to x: CGFloat) -> Self
-//    func split(from x: CGFloat) -> Self
-//    func split(from tMin: CGFloat, to tMax: CGFloat) -> Self
+//    func split(to x: Double) -> Self
+//    func split(from x: Double) -> Self
+//    func split(from tMin: Double, to tMax: Double) -> Self
 }
 
-internal protocol AnalyticalRoots {
-    func distinctAnalyticalRoots(between start: CGFloat, and end: CGFloat) -> [CGFloat]
+protocol AnalyticalRoots {
+    func distinctAnalyticalRoots(between start: Double, and end: Double) -> [Double]
 }
 
 extension BernsteinPolynomial0: AnalyticalRoots {
-    internal func distinctAnalyticalRoots(between start: CGFloat, and end: CGFloat) -> [CGFloat] {
+    func distinctAnalyticalRoots(between _: Double, and _: Double) -> [Double] {
         return []
     }
 }
 
 extension BernsteinPolynomial1: AnalyticalRoots {
-    internal func distinctAnalyticalRoots(between start: CGFloat, and end: CGFloat) -> [CGFloat] {
-        var result: [CGFloat] = []
-        Utils.droots(self.b0, self.b1) {
+    func distinctAnalyticalRoots(between start: Double, and end: Double) -> [Double] {
+        var result: [Double] = []
+        Utils.droots(b0, b1) {
             guard $0 >= start, $0 <= end else { return }
             result.append($0)
         }
@@ -54,9 +51,9 @@ extension BernsteinPolynomial1: AnalyticalRoots {
 }
 
 extension BernsteinPolynomial2: AnalyticalRoots {
-    internal func distinctAnalyticalRoots(between start: CGFloat, and end: CGFloat) -> [CGFloat] {
-        var result: [CGFloat] = []
-        Utils.droots(self.b0, self.b1, self.b2) {
+    func distinctAnalyticalRoots(between start: Double, and end: Double) -> [Double] {
+        var result: [Double] = []
+        Utils.droots(b0, b1, b2) {
             guard $0 >= start, $0 <= end else { return }
             result.append($0)
         }
@@ -65,9 +62,9 @@ extension BernsteinPolynomial2: AnalyticalRoots {
 }
 
 extension BernsteinPolynomial3: AnalyticalRoots {
-    internal func distinctAnalyticalRoots(between start: CGFloat, and end: CGFloat) -> [CGFloat] {
-        var result: [CGFloat] = []
-        Utils.droots(self.b0, self.b1, self.b2, self.b3) {
+    func distinctAnalyticalRoots(between start: Double, and end: Double) -> [Double] {
+        var result: [Double] = []
+        Utils.droots(b0, b1, b2, b3) {
             guard $0 >= start, $0 <= end else { return }
             result.append($0)
         }
@@ -76,30 +73,32 @@ extension BernsteinPolynomial3: AnalyticalRoots {
 }
 
 public extension BernsteinPolynomial {
-    func value(at x: CGFloat) -> CGFloat {
+    func value(at x: Double) -> Double {
         let oneMinusX = 1.0 - x
-        return self.reduce(a1: oneMinusX, a2: x)
+        return reduce(a1: oneMinusX, a2: x)
     }
+
     var derivative: NextLowerOrderPolynomial {
-        let order = CGFloat(self.order)
-        return self.difference(a1: -order, a2: order)
+        let order = Double(self.order)
+        return difference(a1: -order, a2: order)
     }
-    func reduce(a1: CGFloat, a2: CGFloat) -> CGFloat {
-        return self.difference(a1: a1, a2: a2).reduce(a1: a1, a2: a2)
+
+    func reduce(a1: Double, a2: Double) -> Double {
+        return difference(a1: a1, a2: a2).reduce(a1: a1, a2: a2)
     }
-//    func split(to x: CGFloat) -> Self {
+//    func split(to x: Double) -> Self {
 //        let oneMinusX = 1.0 - x
 //        let difference = self.difference(a1: oneMinusX, a2: x)
 //        let differenceSplit: Difference = difference.split(to: x)
 //        return Self(first: self.first, differenceSplit)
 //    }
-//    func split(from x: CGFloat) -> Self {
+//    func split(from x: Double) -> Self {
 //        let oneMinusX = 1.0 - x
 //        let difference = self.difference(a1: oneMinusX, a2: x)
 //        let differenceSplit: Difference = difference.split(from: x)
 //        return Self(differenceSplit, last: self.last)
 //    }
-//    func split(from tMin: CGFloat, to tMax: CGFloat) -> Self {
+//    func split(from tMin: Double, to tMax: Double) -> Self {
 //        guard tMax > tMin else {
 //    #warning("I think this goes into infinite recursion if tMax = tMin = 0.5")
 //            return self.reversed().split(from: 1.0 - tMin, to: 1.0 - tMax)
@@ -119,180 +118,190 @@ public extension BernsteinPolynomial {
 }
 
 public struct BernsteinPolynomial0: BernsteinPolynomial {
-//    func enumerated(block: (Int, CGFloat) -> Void) {
+//    func enumerated(block: (Int, Double) -> Void) {
 //        block(0, b0)
 //    }
-//    var last: CGFloat { return b0 }
-//    var first: CGFloat { return b0 }
-//    init(_ d: BernsteinPolynomial0, last: CGFloat) { self.b0 = last }
-//    init(first: CGFloat, _ d: BernsteinPolynomial0) { self.b0 = first }
+//    var last: Double { return b0 }
+//    var first: Double { return b0 }
+//    init(_ d: BernsteinPolynomial0, last: Double) { self.b0 = last }
+//    init(first: Double, _ d: BernsteinPolynomial0) { self.b0 = first }
 //    func reversed() -> BernsteinPolynomial0 { return self }
-//    func split(to x: CGFloat) -> Self { return self }
-//    func split(from x: CGFloat) -> Self { return self }
-    public init(b0: CGFloat) { self.b0 = b0 }
-    public var b0: CGFloat
-    public var coefficients: [CGFloat] { return [b0] }
-    public func value(at x: CGFloat) -> CGFloat {
+//    func split(to x: Double) -> Self { return self }
+//    func split(from x: Double) -> Self { return self }
+    public init(b0: Double) { self.b0 = b0 }
+    public var b0: Double
+    public var coefficients: [Double] { return [b0] }
+    public func value(at _: Double) -> Double {
         return b0
     }
+
     public var order: Int { return 0 }
-    public func reduce(a1: CGFloat, a2: CGFloat) -> CGFloat { return 0.0 }
-    public func difference(a1: CGFloat, a2: CGFloat) -> BernsteinPolynomial0 {
+    public func reduce(a1 _: Double, a2 _: Double) -> Double { return 0.0 }
+    public func difference(a1 _: Double, a2 _: Double) -> BernsteinPolynomial0 {
         return BernsteinPolynomial0(b0: 0.0)
     }
 }
 
 public struct BernsteinPolynomial1: BernsteinPolynomial {
-//    func enumerated(block: (Int, CGFloat) -> Void) {
+//    func enumerated(block: (Int, Double) -> Void) {
 //        block(0, b0)
 //        block(1, b1)
 //    }
 //
-//    var last: CGFloat { return b1 }
-//    var first: CGFloat { return b0 }
+//    var last: Double { return b1 }
+//    var first: Double { return b0 }
 //
-//    init(_ d: BernsteinPolynomial0, last: CGFloat) {
+//    init(_ d: BernsteinPolynomial0, last: Double) {
 //        self.b0 = d.b0
 //        self.b1 = last
 //    }
 //
-//    init(first: CGFloat, _ d: BernsteinPolynomial0) {
+//    init(first: Double, _ d: BernsteinPolynomial0) {
 //        self.b0 = first
 //        self.b1 = d.b0
 //    }
 //    func reversed() -> BernsteinPolynomial1 { BernsteinPolynomial1(b0: b1, b1: b0) }
-    public init(b0: CGFloat, b1: CGFloat) {
+    public init(b0: Double, b1: Double) {
         self.b0 = b0
         self.b1 = b1
     }
+
     public typealias NextLowerOrderPolynomial = BernsteinPolynomial0
-    public var b0, b1: CGFloat
-    public var coefficients: [CGFloat] { return [b0, b1] }
-    public func reduce(a1: CGFloat, a2: CGFloat) -> CGFloat {
+    public var b0, b1: Double
+    public var coefficients: [Double] { return [b0, b1] }
+    public func reduce(a1: Double, a2: Double) -> Double {
         return a1 * b0 + a2 * b1
     }
-    public func difference(a1: CGFloat, a2: CGFloat) -> BernsteinPolynomial0 {
-        return BernsteinPolynomial0(b0: self.reduce(a1: a1, a2: a2))
+
+    public func difference(a1: Double, a2: Double) -> BernsteinPolynomial0 {
+        return BernsteinPolynomial0(b0: reduce(a1: a1, a2: a2))
     }
+
     public var order: Int { return 1 }
 }
 
 public struct BernsteinPolynomial2: BernsteinPolynomial {
-//    func enumerated(block: (Int, CGFloat) -> Void) {
+//    func enumerated(block: (Int, Double) -> Void) {
 //        block(0, b0)
 //        block(1, b1)
 //        block(2, b2)
 //    }
-//    var last: CGFloat { return b2 }
-//    var first: CGFloat { return b0 }
-//    init(_ d: BernsteinPolynomial1, last: CGFloat) {
+//    var last: Double { return b2 }
+//    var first: Double { return b0 }
+//    init(_ d: BernsteinPolynomial1, last: Double) {
 //        self.b0 = d.b0
 //        self.b1 = d.b1
 //        self.b2 = last
 //    }
-//    init(first: CGFloat, _ d: BernsteinPolynomial1) {
+//    init(first: Double, _ d: BernsteinPolynomial1) {
 //        self.b0 = first
 //        self.b1 = d.b0
 //        self.b2 = d.b1
 //    }
-    public init(b0: CGFloat, b1: CGFloat, b2: CGFloat) {
+    public init(b0: Double, b1: Double, b2: Double) {
         self.b0 = b0
         self.b1 = b1
         self.b2 = b2
     }
+
     public typealias NextLowerOrderPolynomial = BernsteinPolynomial1
-    public var b0, b1, b2: CGFloat
-    public var coefficients: [CGFloat] { return [b0, b1, b2] }
-    public func difference(a1: CGFloat, a2: CGFloat) -> BernsteinPolynomial1 {
+    public var b0, b1, b2: Double
+    public var coefficients: [Double] { return [b0, b1, b2] }
+    public func difference(a1: Double, a2: Double) -> BernsteinPolynomial1 {
         return BernsteinPolynomial1(b0: a1 * b0 + a2 * b1,
-                           b1: a1 * b1 + a2 * b2)
+                                    b1: a1 * b1 + a2 * b2)
     }
+
     public var order: Int { return 2 }
 }
 
 public struct BernsteinPolynomial3: BernsteinPolynomial {
-//    func enumerated(block: (Int, CGFloat) -> Void) {
+//    func enumerated(block: (Int, Double) -> Void) {
 //        block(0, b0)
 //        block(1, b1)
 //        block(2, b2)
 //        block(3, b3)
 //    }
-//    var last: CGFloat { return b3 }
-//    var first: CGFloat { return b0 }
-//    init(_ d: BernsteinPolynomial2, last: CGFloat) {
+//    var last: Double { return b3 }
+//    var first: Double { return b0 }
+//    init(_ d: BernsteinPolynomial2, last: Double) {
 //        self.b0 = d.b0
 //        self.b1 = d.b1
 //        self.b2 = d.b2
 //        self.b3 = last
 //    }
-//    init(first: CGFloat, _ d: BernsteinPolynomial2) {
+//    init(first: Double, _ d: BernsteinPolynomial2) {
 //        self.b0 = first
 //        self.b1 = d.b0
 //        self.b2 = d.b1
 //        self.b3 = d.b2
 //    }
-    public init(b0: CGFloat, b1: CGFloat, b2: CGFloat, b3: CGFloat) {
+    public init(b0: Double, b1: Double, b2: Double, b3: Double) {
         self.b0 = b0
         self.b1 = b1
         self.b2 = b2
         self.b3 = b3
     }
+
     public typealias NextLowerOrderPolynomial = BernsteinPolynomial2
-    public var b0, b1, b2, b3: CGFloat
-    public var coefficients: [CGFloat] { return [b0, b1, b2, b3] }
-    public func difference(a1: CGFloat, a2: CGFloat) -> BernsteinPolynomial2 {
+    public var b0, b1, b2, b3: Double
+    public var coefficients: [Double] { return [b0, b1, b2, b3] }
+    public func difference(a1: Double, a2: Double) -> BernsteinPolynomial2 {
         return BernsteinPolynomial2(b0: a1 * b0 + a2 * b1,
-                           b1: a1 * b1 + a2 * b2,
-                           b2: a1 * b2 + a2 * b3)
+                                    b1: a1 * b1 + a2 * b2,
+                                    b2: a1 * b2 + a2 * b3)
     }
+
     public var order: Int { return 3 }
 }
 
 public struct BernsteinPolynomial4: BernsteinPolynomial {
-//    func enumerated(block: (Int, CGFloat) -> Void) {
+//    func enumerated(block: (Int, Double) -> Void) {
 //        block(0, b0)
 //        block(1, b1)
 //        block(2, b2)
 //        block(3, b3)
 //        block(4, b4)
 //    }
-//    var last: CGFloat { return b4 }
-//    var first: CGFloat { return b0 }
-//    init(_ d: BernsteinPolynomial3, last: CGFloat) {
+//    var last: Double { return b4 }
+//    var first: Double { return b0 }
+//    init(_ d: BernsteinPolynomial3, last: Double) {
 //        self.b0 = d.b0
 //        self.b1 = d.b1
 //        self.b2 = d.b2
 //        self.b3 = d.b3
 //        self.b4 = last
 //    }
-//    init(first: CGFloat, _ d: BernsteinPolynomial3) {
+//    init(first: Double, _ d: BernsteinPolynomial3) {
 //        self.b0 = first
 //        self.b1 = d.b0
 //        self.b2 = d.b1
 //        self.b3 = d.b2
 //        self.b4 = d.b3
 //    }
-    public init(b0: CGFloat, b1: CGFloat, b2: CGFloat, b3: CGFloat, b4: CGFloat) {
+    public init(b0: Double, b1: Double, b2: Double, b3: Double, b4: Double) {
         self.b0 = b0
         self.b1 = b1
         self.b2 = b2
         self.b3 = b3
         self.b4 = b4
     }
+
     public typealias NextLowerOrderPolynomial = BernsteinPolynomial3
-    public var b0, b1, b2, b3, b4: CGFloat
-    public var coefficients: [CGFloat] { return [b0, b1, b2, b3, b4] }
-    public func difference(a1: CGFloat, a2: CGFloat) -> BernsteinPolynomial3 {
+    public var b0, b1, b2, b3, b4: Double
+    public var coefficients: [Double] { return [b0, b1, b2, b3, b4] }
+    public func difference(a1: Double, a2: Double) -> BernsteinPolynomial3 {
         return BernsteinPolynomial3(b0: a1 * b0 + a2 * b1,
-                           b1: a1 * b1 + a2 * b2,
-                           b2: a1 * b2 + a2 * b3,
-                           b3: a1 * b3 + a2 * b4)
+                                    b1: a1 * b1 + a2 * b2,
+                                    b2: a1 * b2 + a2 * b3,
+                                    b3: a1 * b3 + a2 * b4)
     }
+
     public var order: Int { return 4 }
 }
 
 public struct BernsteinPolynomial5: BernsteinPolynomial {
-//    func enumerated(block: (Int, CGFloat) -> Void) {
+//    func enumerated(block: (Int, Double) -> Void) {
 //        block(0, b0)
 //        block(1, b1)
 //        block(2, b2)
@@ -300,9 +309,9 @@ public struct BernsteinPolynomial5: BernsteinPolynomial {
 //        block(4, b4)
 //        block(5, b5)
 //    }
-//    var last: CGFloat { return b5 }
-//    var first: CGFloat { return b0 }
-//    init(_ d: BernsteinPolynomial4, last: CGFloat) {
+//    var last: Double { return b5 }
+//    var first: Double { return b0 }
+//    init(_ d: BernsteinPolynomial4, last: Double) {
 //        self.b0 = d.b0
 //        self.b1 = d.b1
 //        self.b2 = d.b2
@@ -310,7 +319,7 @@ public struct BernsteinPolynomial5: BernsteinPolynomial {
 //        self.b4 = d.b4
 //        self.b5 = last
 //    }
-//    init(first: CGFloat, _ d: BernsteinPolynomial4) {
+//    init(first: Double, _ d: BernsteinPolynomial4) {
 //        self.b0 = first
 //        self.b1 = d.b0
 //        self.b2 = d.b1
@@ -318,7 +327,7 @@ public struct BernsteinPolynomial5: BernsteinPolynomial {
 //        self.b4 = d.b3
 //        self.b5 = d.b4
 //    }
-    public init(b0: CGFloat, b1: CGFloat, b2: CGFloat, b3: CGFloat, b4: CGFloat, b5: CGFloat) {
+    public init(b0: Double, b1: Double, b2: Double, b3: Double, b4: Double, b5: Double) {
         self.b0 = b0
         self.b1 = b1
         self.b2 = b2
@@ -326,23 +335,25 @@ public struct BernsteinPolynomial5: BernsteinPolynomial {
         self.b4 = b4
         self.b5 = b5
     }
+
     public typealias NextLowerOrderPolynomial = BernsteinPolynomial4
-    public var b0, b1, b2, b3, b4, b5: CGFloat
-    public var coefficients: [CGFloat] { return [b0, b1, b2, b3, b4, b5] }
-    public func difference(a1: CGFloat, a2: CGFloat) -> BernsteinPolynomial4 {
+    public var b0, b1, b2, b3, b4, b5: Double
+    public var coefficients: [Double] { return [b0, b1, b2, b3, b4, b5] }
+    public func difference(a1: Double, a2: Double) -> BernsteinPolynomial4 {
         return BernsteinPolynomial4(b0: a1 * b0 + a2 * b1,
-                           b1: a1 * b1 + a2 * b2,
-                           b2: a1 * b2 + a2 * b3,
-                           b3: a1 * b3 + a2 * b4,
-                           b4: a1 * b4 + a2 * b5)
+                                    b1: a1 * b1 + a2 * b2,
+                                    b2: a1 * b2 + a2 * b3,
+                                    b3: a1 * b3 + a2 * b4,
+                                    b4: a1 * b4 + a2 * b5)
     }
+
     public var order: Int { return 5 }
 }
 
-private func newton<P: BernsteinPolynomial>(polynomial: P, derivative: P.NextLowerOrderPolynomial, guess: CGFloat, relaxation: CGFloat = 1) -> CGFloat {
+private func newton<P: BernsteinPolynomial>(polynomial: P, derivative: P.NextLowerOrderPolynomial, guess: Double, relaxation: Double = 1) -> Double {
     let maxIterations = 20
     var x = guess
-    for _ in 0..<maxIterations {
+    for _ in 0 ..< maxIterations {
         let f = polynomial.value(at: x)
         guard f != 0.0 else { break }
         let fPrime = derivative.value(at: x)
@@ -354,7 +365,7 @@ private func newton<P: BernsteinPolynomial>(polynomial: P, derivative: P.NextLow
     return x
 }
 
-private func findRootBisection<P: BernsteinPolynomial>(of polynomial: P, start: CGFloat, end: CGFloat) -> CGFloat {
+private func findRootBisection<P: BernsteinPolynomial>(of polynomial: P, start: Double, end: Double) -> Double {
     var guess = (start + end) / 2
     var low = start
     var high = end
@@ -381,25 +392,25 @@ private func findRootBisection<P: BernsteinPolynomial>(of polynomial: P, start: 
     return guess
 }
 
-public func findDistinctRootsInUnitInterval<P: BernsteinPolynomial>(of polynomial: P) -> [CGFloat] {
+public func findDistinctRootsInUnitInterval<P: BernsteinPolynomial>(of polynomial: P) -> [Double] {
     return findDistinctRoots(of: polynomial, between: 0, and: 1)
 }
 
-internal func findDistinctRoots<P: BernsteinPolynomial>(of polynomial: P, between start: CGFloat, and end: CGFloat) -> [CGFloat] {
+func findDistinctRoots<P: BernsteinPolynomial>(of polynomial: P, between start: Double, and end: Double) -> [Double] {
     assert(start < end)
     if let analytical = polynomial as? AnalyticalRoots {
         return analytical.distinctAnalyticalRoots(between: start, and: end)
     }
     let derivative = polynomial.derivative
-    let criticalPoints: [CGFloat] = findDistinctRoots(of: derivative, between: start, and: end)
-    let intervals: [CGFloat] = [start] + criticalPoints + [end]
-    var lastFoundRoot: CGFloat?
-    let roots = (0..<intervals.count-1).compactMap { (i: Int) -> CGFloat? in
-        let start   = intervals[i]
-        let end     = intervals[i+1]
-        let fStart  = polynomial.value(at: start)
-        let fEnd    = polynomial.value(at: end)
-        let root: CGFloat
+    let criticalPoints: [Double] = findDistinctRoots(of: derivative, between: start, and: end)
+    let intervals: [Double] = [start] + criticalPoints + [end]
+    var lastFoundRoot: Double?
+    let roots = (0 ..< intervals.count - 1).compactMap { (i: Int) -> Double? in
+        let start = intervals[i]
+        let end = intervals[i + 1]
+        let fStart = polynomial.value(at: start)
+        let fEnd = polynomial.value(at: end)
+        let root: Double
         if fStart * fEnd < 0 {
             // TODO: if a critical point is a root we take this
             // codepath due to roundoff and  converge only linearly to one end of interval
@@ -435,15 +446,15 @@ internal func findDistinctRoots<P: BernsteinPolynomial>(of polynomial: P, betwee
     return roots
 }
 
-// internal func findRoots<P: BernsteinPolynomial>(of polynomial: P, between start: CGFloat, and end: CGFloat) -> [CGFloat] {
+// internal func findRoots<P: BernsteinPolynomial>(of polynomial: P, between start: Double, and end: Double) -> [Double] {
 //    assert(start < end)
 //
-//    var tMin: CGFloat = CGFloat.infinity
-//    var tMax: CGFloat = -CGFloat.infinity
+//    var tMin: Double = Double.infinity
+//    var tMax: Double = -Double.infinity
 //    var intersected = false
 //
-//    func x(_ i: Int) -> CGFloat {
-//        return CGFloat(i) / CGFloat(polynomial.order)
+//    func x(_ i: Int) -> Double {
+//        return Double(i) / Double(polynomial.order)
 //    }
 //    // compute the intersections of each pair of lines with the x axis
 //    polynomial.enumerated { i, c1 in
@@ -476,7 +487,7 @@ internal func findDistinctRoots<P: BernsteinPolynomial>(of polynomial: P, betwee
 //    assert(tMax >= tMin)
 //
 //    // find [adjustedStart, adjustedEnd] range represented by [tMin, tMax] in original polynomial
-//    func adjustedT(_ t: CGFloat) -> CGFloat {
+//    func adjustedT(_ t: Double) -> Double {
 //        return start * (1.0 - t) + end * t
 //    }
 //    let adjustedStart = adjustedT(tMin)

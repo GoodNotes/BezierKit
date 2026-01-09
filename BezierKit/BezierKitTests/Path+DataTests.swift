@@ -6,193 +6,194 @@
 //  Copyright © 2019 Holmes Futrell. All rights reserved.
 //
 
-import XCTest
 @testable import BezierKit
+import XCTest
 
 #if canImport(CoreGraphics)
 
-internal struct CGPathElementRecord: Equatable {
-    var type: CGPathElementType
-    var pointsArray: [CGPoint]
-    init(_ pathElement: CGPathElement) {
-        self.type = pathElement.type
-        let count = { () -> Int in
-            switch pathElement.type {
-            case .moveToPoint:
-                return 1
-            case .addLineToPoint:
-                return 1
-            case .addQuadCurveToPoint:
-                return 2
-            case .addCurveToPoint:
-                return 3
-            case .closeSubpath:
-                return 0
-            @unknown default:
-                fatalError("unexpected unknown path element type: \(pathElement.type)")
-            }
-        }()
-        self.pointsArray = [CGPoint](UnsafeBufferPointer(start: pathElement.points, count: count))
-    }
-    init(type: CGPathElementType, points: [CGPoint]) {
-        self.type = type
-        self.pointsArray = points
-    }
-}
-
-fileprivate extension CGPath {
-    private class ElementGetterContext {
-        var elements: [CGPathElementRecord] = []
-    }
-    var elements: [CGPathElementRecord] {
-        func elementGetterApplierFunction(_ info: UnsafeMutableRawPointer?, _ element: UnsafePointer<CGPathElement>) {
-            let context = info!.assumingMemoryBound(to: ElementGetterContext.self).pointee
-            context.elements.append(CGPathElementRecord(element.pointee))
+    struct CGPathElementRecord: Equatable {
+        var type: CGPathElementType
+        var pointsArray: [Point]
+        init(_ pathElement: CGPathElement) {
+            type = pathElement.type
+            let count = { () -> Int in
+                switch pathElement.type {
+                case .moveToPoint:
+                    return 1
+                case .addLineToPoint:
+                    return 1
+                case .addQuadCurveToPoint:
+                    return 2
+                case .addCurveToPoint:
+                    return 3
+                case .closeSubpath:
+                    return 0
+                @unknown default:
+                    fatalError("unexpected unknown path element type: \(pathElement.type)")
+                }
+            }()
+            pointsArray = UnsafeBufferPointer(start: pathElement.points, count: count).map(Point.init)
         }
-        var elementGetterContext = ElementGetterContext()
-        self.apply(info: &elementGetterContext, function: elementGetterApplierFunction)
-        return elementGetterContext.elements
+
+        init(type: CGPathElementType, points: [Point]) {
+            self.type = type
+            pointsArray = points
+        }
     }
-}
+
+    fileprivate extension CGPath {
+        private class ElementGetterContext {
+            var elements: [CGPathElementRecord] = []
+        }
+
+        var elements: [CGPathElementRecord] {
+            func elementGetterApplierFunction(_ info: UnsafeMutableRawPointer?, _ element: UnsafePointer<CGPathElement>) {
+                let context = info!.assumingMemoryBound(to: ElementGetterContext.self).pointee
+                context.elements.append(CGPathElementRecord(element.pointee))
+            }
+            var elementGetterContext = ElementGetterContext()
+            apply(info: &elementGetterContext, function: elementGetterApplierFunction)
+            return elementGetterContext.elements
+        }
+    }
 
 #endif
 
 class PathDataTests: XCTestCase {
-
     #if canImport(CoreGraphics)
 
-    private func pathHasEqualElementsToCGPath(_ path1: Path, _ path2: CGPath) -> Bool {
-        return cgPathsHaveEqualCGPathElements(Path(data: path1.data)!.cgPath, path2)
-    }
+        private func pathHasEqualElementsToCGPath(_ path1: Path, _ path2: CGPath) -> Bool {
+            return cgPathsHaveEqualCGPathElements(Path(data: path1.data)!.cgPath, path2)
+        }
 
-    private func cgPathsHaveEqualCGPathElements(_ path1: CGPath, _ path2: CGPath) -> Bool {
-        // checks that the CGPathElements that make up the paths are exactly equal
-        // unfortunately we cannot just check path1 == path2 because CGPath.isRect can differ even if the underlying data is the same
-        let pathElements1 = path1.elements
-        let pathElements2 = path2.elements
-        return pathElements1 == pathElements2
-    }
+        private func cgPathsHaveEqualCGPathElements(_ path1: CGPath, _ path2: CGPath) -> Bool {
+            // checks that the CGPathElements that make up the paths are exactly equal
+            // unfortunately we cannot just check path1 == path2 because CGPath.isRect can differ even if the underlying data is the same
+            let pathElements1 = path1.elements
+            let pathElements2 = path2.elements
+            return pathElements1 == pathElements2
+        }
 
-    func testTooling() {
-        let rect = CGRect(x: 1, y: 1, width: 2, height: 3)
-        let rectCGPath = CGPath(rect: rect, transform: nil)
-        let ellipseCGPath = CGPath(ellipseIn: rect, transform: nil)
-        let emptyPath = CGMutablePath()
-        let quadPath1 = { () -> CGPath in
+        func testTooling() {
+            let rect = Rect(x: 1, y: 1, width: 2, height: 3)
+            let rectCGPath = CGPath(rect: rect.cgRect, transform: nil)
+            let ellipseCGPath = CGPath(ellipseIn: rect.cgRect, transform: nil)
+            let emptyPath = CGMutablePath()
+            let quadPath1 = { () -> CGPath in
+                let cgPath = CGMutablePath()
+                cgPath.move(to: Point(x: 1, y: 1))
+                cgPath.addQuadCurve(to: Point(x: 3, y: 1), control: Point(x: 3, y: 4))
+                return cgPath
+            }()
+            let quadPath2 = { () -> CGPath in
+                let cgPath = CGMutablePath()
+                cgPath.move(to: Point(x: 1, y: 1))
+                cgPath.addQuadCurve(to: Point(x: 3, y: 1), control: Point(x: 3, y: 5))
+                return cgPath
+            }()
+            XCTAssertTrue(cgPathsHaveEqualCGPathElements(emptyPath, emptyPath))
+            XCTAssertFalse(cgPathsHaveEqualCGPathElements(rectCGPath, emptyPath))
+            XCTAssertFalse(cgPathsHaveEqualCGPathElements(rectCGPath, ellipseCGPath))
+            XCTAssertFalse(cgPathsHaveEqualCGPathElements(quadPath1, quadPath2))
+            XCTAssertTrue(cgPathsHaveEqualCGPathElements(quadPath1, quadPath1))
+            XCTAssertTrue(cgPathsHaveEqualCGPathElements(rectCGPath, rectCGPath))
+            XCTAssertTrue(cgPathsHaveEqualCGPathElements(ellipseCGPath, ellipseCGPath))
+        }
+
+        func testEmpty() {
+            let emptyCGPath = CGMutablePath()
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(), emptyCGPath))
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: emptyCGPath), emptyCGPath))
+        }
+
+        func testRectangle() {
+            let rectCGPath = CGPath(rect: Rect(x: 1, y: 1, width: 2, height: 3).cgRect, transform: nil)
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: rectCGPath), rectCGPath))
+        }
+
+        func testSingleOpenPath() {
             let cgPath = CGMutablePath()
-            cgPath.move(to: CGPoint(x: 1, y: 1))
-            cgPath.addQuadCurve(to: CGPoint(x: 3, y: 1), control: CGPoint(x: 3, y: 4))
-            return cgPath
-        }()
-        let quadPath2 = { () -> CGPath in
+            cgPath.move(to: Point(x: 3, y: 4))
+            cgPath.addCurve(to: Point(x: 4, y: 5), control1: Point(x: 5, y: 5), control2: Point(x: 6, y: 4))
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
+        }
+
+        func testQuadratic() {
             let cgPath = CGMutablePath()
-            cgPath.move(to: CGPoint(x: 1, y: 1))
-            cgPath.addQuadCurve(to: CGPoint(x: 3, y: 1), control: CGPoint(x: 3, y: 5))
-            return cgPath
-        }()
-        XCTAssertTrue(cgPathsHaveEqualCGPathElements(emptyPath, emptyPath))
-        XCTAssertFalse(cgPathsHaveEqualCGPathElements(rectCGPath, emptyPath))
-        XCTAssertFalse(cgPathsHaveEqualCGPathElements(rectCGPath, ellipseCGPath))
-        XCTAssertFalse(cgPathsHaveEqualCGPathElements(quadPath1, quadPath2))
-        XCTAssertTrue(cgPathsHaveEqualCGPathElements(quadPath1, quadPath1))
-        XCTAssertTrue(cgPathsHaveEqualCGPathElements(rectCGPath, rectCGPath))
-        XCTAssertTrue(cgPathsHaveEqualCGPathElements(ellipseCGPath, ellipseCGPath))
-    }
+            cgPath.move(to: Point(x: 3, y: 4))
+            cgPath.addQuadCurve(to: Point(x: 4, y: 5), control: Point(x: 3.5, y: 7))
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
+        }
 
-    func testEmpty() {
-        let emptyCGPath = CGMutablePath()
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(), emptyCGPath))
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: emptyCGPath), emptyCGPath))
-    }
+        func testSingleClosedPathClosePath() {
+            let cgPath = CGMutablePath()
+            cgPath.move(to: Point(x: 3, y: 4))
+            cgPath.addLine(to: Point(x: 4, y: 4))
+            cgPath.addLine(to: Point(x: 4, y: 5))
+            cgPath.addLine(to: Point(x: 3, y: 5))
+            cgPath.closeSubpath()
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
+        }
 
-    func testRectangle() {
-        let rectCGPath = CGPath(rect: CGRect(x: 1, y: 1, width: 2, height: 3), transform: nil)
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: rectCGPath), rectCGPath))
-    }
+        func testMultipleOpenPaths() {
+            let cgPath = CGMutablePath()
+            cgPath.move(to: Point(x: 3, y: 4))
+            cgPath.addLine(to: Point(x: 4, y: 5))
+            cgPath.move(to: Point(x: 6, y: 4))
+            cgPath.addLine(to: Point(x: 7, y: 5))
+            cgPath.move(to: Point(x: 9, y: 4))
+            cgPath.addLine(to: Point(x: 10, y: 5))
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
+        }
 
-    func testSingleOpenPath() {
-        let cgPath = CGMutablePath()
-        cgPath.move(to: CGPoint(x: 3, y: 4))
-        cgPath.addCurve(to: CGPoint(x: 4, y: 5), control1: CGPoint(x: 5, y: 5), control2: CGPoint(x: 6, y: 4))
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
-    }
+        func testSinglePointMoveTo() {
+            let cgPath = CGMutablePath()
+            cgPath.move(to: Point(x: 3, y: 4))
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
+        }
 
-    func testQuadratic() {
-        let cgPath = CGMutablePath()
-        cgPath.move(to: CGPoint(x: 3, y: 4))
-        cgPath.addQuadCurve(to: CGPoint(x: 4, y: 5), control: CGPoint(x: 3.5, y: 7))
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
-    }
+        func testSinglePointMoveToCloseSubpath() {
+            let cgPath = CGMutablePath()
+            cgPath.move(to: Point(x: 3, y: 4))
+            let beforeClosing = Path(cgPath: cgPath)
+            cgPath.closeSubpath()
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), beforeClosing.cgPath))
+        }
 
-    func testSingleClosedPathClosePath() {
-        let cgPath = CGMutablePath()
-        cgPath.move(to: CGPoint(x: 3, y: 4))
-        cgPath.addLine(to: CGPoint(x: 4, y: 4))
-        cgPath.addLine(to: CGPoint(x: 4, y: 5))
-        cgPath.addLine(to: CGPoint(x: 3, y: 5))
-        cgPath.closeSubpath()
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
-    }
+        func testMultipleSinglePoints() {
+            let cgPath = CGMutablePath()
+            cgPath.move(to: Point(x: 1, y: 2))
+            cgPath.move(to: Point(x: 2, y: 3))
+            cgPath.move(to: Point(x: 3, y: 4))
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
+            cgPath.addLine(to: Point(x: 4, y: 5))
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
+        }
 
-    func testMultipleOpenPaths() {
-        let cgPath = CGMutablePath()
-        cgPath.move(to: CGPoint(x: 3, y: 4))
-        cgPath.addLine(to: CGPoint(x: 4, y: 5))
-        cgPath.move(to: CGPoint(x: 6, y: 4))
-        cgPath.addLine(to: CGPoint(x: 7, y: 5))
-        cgPath.move(to: CGPoint(x: 9, y: 4))
-        cgPath.addLine(to: CGPoint(x: 10, y: 5))
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
-    }
+        func testMultipleComponentsNoMoveto() {
+            // ensure that if the cgPath starts a new component without a move(to:) command that we still work properly
+            let cgPath = CGMutablePath()
+            let firstComponentPoints = [Point(x: 0, y: 0),
+                                        Point(x: 1, y: 0),
+                                        Point(x: 1, y: 1),
+                                        Point(x: 0, y: 1),
+                                        Point(x: 0, y: 0)]
+            let secondComponentPoint = Point(x: -1, y: 0)
+            cgPath.addLines(between: firstComponentPoints)
+            cgPath.closeSubpath()
+            cgPath.addLine(to: secondComponentPoint)
 
-    func testSinglePointMoveTo() {
-        let cgPath = CGMutablePath()
-        cgPath.move(to: CGPoint(x: 3, y: 4))
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
-    }
+            let path = Path(data: Path(cgPath: cgPath).data)!
+            XCTAssertEqual(path.components[0].points, firstComponentPoints)
+            XCTAssertEqual(path.components[1].points, [firstComponentPoints.last!, secondComponentPoint])
+        }
 
-    func testSinglePointMoveToCloseSubpath() {
-        let cgPath = CGMutablePath()
-        cgPath.move(to: CGPoint(x: 3, y: 4))
-        let beforeClosing = Path(cgPath: cgPath)
-        cgPath.closeSubpath()
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), beforeClosing.cgPath))
-    }
-
-    func testMultipleSinglePoints() {
-        let cgPath = CGMutablePath()
-        cgPath.move(to: CGPoint(x: 1, y: 2))
-        cgPath.move(to: CGPoint(x: 2, y: 3))
-        cgPath.move(to: CGPoint(x: 3, y: 4))
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
-        cgPath.addLine(to: CGPoint(x: 4, y: 5))
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
-    }
-
-    func testMultipleComponentsNoMoveto() {
-        // ensure that if the cgPath starts a new component without a move(to:) command that we still work properly
-        let cgPath = CGMutablePath()
-        let firstComponentPoints = [CGPoint(x: 0, y: 0),
-                                    CGPoint(x: 1, y: 0),
-                                    CGPoint(x: 1, y: 1),
-                                    CGPoint(x: 0, y: 1),
-                                    CGPoint(x: 0, y: 0)]
-        let secondComponentPoint = CGPoint(x: -1, y: 0)
-        cgPath.addLines(between: firstComponentPoints)
-        cgPath.closeSubpath()
-        cgPath.addLine(to: secondComponentPoint)
-
-        let path = Path(data: Path(cgPath: cgPath).data)!
-        XCTAssertEqual(path.components[0].points, firstComponentPoints)
-        XCTAssertEqual(path.components[1].points, [firstComponentPoints.last!, secondComponentPoint])
-    }
-
-    func testMultipleClosedPaths() {
-        let cgPath = CGMutablePath()
-        cgPath.addRect(CGRect(x: 1, y: 1, width: 2, height: 3))
-        cgPath.addRect(CGRect(x: 4, y: 2, width: 2, height: 3))
-        XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
-    }
+        func testMultipleClosedPaths() {
+            let cgPath = CGMutablePath()
+            cgPath.addRect(Rect(x: 1, y: 1, width: 2, height: 3))
+            cgPath.addRect(Rect(x: 4, y: 2, width: 2, height: 3))
+            XCTAssertTrue(pathHasEqualElementsToCGPath(Path(cgPath: cgPath), cgPath))
+        }
 
     #endif
 
@@ -201,9 +202,7 @@ class PathDataTests: XCTestCase {
         XCTAssertEqual(path, nil)
     }
 
-    let simpleRectangle = {
-        Path(rect: CGRect(x: 1, y: 2, width: 3, height: 4))
-    }()
+    let simpleRectangle = Path(rect: Rect(x: 1, y: 2, width: 3, height: 4))
 
     let expectedSimpleRectangleData = Data(base64Encoded: "JbPlSAUAAAAAAQEBAQAAAAAAAPA/AAAAAAAAAEAAAAAAAAAQQAAAAAAAAABAAAAAAAAAEEAAAAAAAAAYQAAAAAAAAPA/AAAAAAAAGEAAAAAAAADwPwAAAAAAAABA")!
 
@@ -223,17 +222,17 @@ class PathDataTests: XCTestCase {
     func testCorruptedData() {
         let data = simpleRectangle.data
         XCTAssertNotEqual(Path(data: data), nil)
-        let corruptData1 = data[0..<data.count-1] // missing last y coordinate
+        let corruptData1 = data[0 ..< data.count - 1] // missing last y coordinate
         XCTAssertEqual(Path(data: corruptData1), nil)
-        let corruptData2 = data[0..<data.count-9] // missing last x coordinate
+        let corruptData2 = data[0 ..< data.count - 9] // missing last x coordinate
         XCTAssertEqual(Path(data: corruptData2), nil)
-        let corruptData3 = data[0..<3] // magic number cut off
+        let corruptData3 = data[0 ..< 3] // magic number cut off
         XCTAssertEqual(Path(data: corruptData3), nil)
-        let corruptData4 = data[0..<4] // only magic number
+        let corruptData4 = data[0 ..< 4] // only magic number
         XCTAssertEqual(Path(data: corruptData4), nil)
-        let corruptData5 = data[0..<5] // command count cut off
+        let corruptData5 = data[0 ..< 5] // command count cut off
         XCTAssertEqual(Path(data: corruptData5), nil)
-        let corruptData6 = data[0..<10] // commands cut off
+        let corruptData6 = data[0 ..< 10] // commands cut off
         XCTAssertEqual(Path(data: corruptData6), nil)
     }
 }

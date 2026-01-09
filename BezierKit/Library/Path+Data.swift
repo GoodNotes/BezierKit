@@ -7,11 +7,8 @@
 //
 
 import Foundation
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 
-fileprivate extension Data {
+private extension Data {
     mutating func appendNativeValue<U>(_ value: U) {
         var temp = value
         withUnsafePointer(to: &temp) { (ptr: UnsafePointer<U>) in
@@ -28,52 +25,52 @@ private struct DataStream {
 
     init(data: Data) {
         self.data = data
-        self.dataCursor = data.startIndex
+        dataCursor = data.startIndex
     }
 
     mutating func read(_ buffer: UnsafeMutablePointer<UInt8>, maxLength: Int) -> Int {
         let startIndex = dataCursor
         let endIndex = min(dataCursor + maxLength, data.count)
-        data.copyBytes(to: buffer, from: startIndex..<endIndex)
+        data.copyBytes(to: buffer, from: startIndex ..< endIndex)
         let readBytes = endIndex - startIndex
         dataCursor += readBytes
         return readBytes
     }
+
     mutating func readNativeValue<T>(_ value: UnsafeMutablePointer<T>) -> Bool {
         let size = MemoryLayout<T>.size
         return value.withMemoryRebound(to: UInt8.self, capacity: size) {
             self.read($0, maxLength: size) == size
         }
     }
+
     mutating func appendNativeValues<T>(to array: inout [T], count: Int) -> Bool {
         guard count > 0 else { return true }
         let size = count * MemoryLayout<T>.stride
         let buffer = UnsafeMutableBufferPointer<UInt8>.allocate(capacity: size)
         defer { buffer.deallocate() }
         guard let pointer = buffer.baseAddress else { return false }
-        let bytesRead = self.read(pointer, maxLength: size)
+        let bytesRead = read(pointer, maxLength: size)
         guard bytesRead == size else { return false }
         array.append(contentsOf: UnsafeRawBufferPointer(buffer).bindMemory(to: T.self))
         return true
     }
 }
 
-private struct SerializationTypes {
-    typealias MagicNumber   = UInt32
-    typealias CommandCount  = UInt32
-    typealias Command       = UInt8
-    typealias Coordinate    = Float64
+private enum SerializationTypes {
+    typealias MagicNumber = UInt32
+    typealias CommandCount = UInt32
+    typealias Command = UInt8
+    typealias Coordinate = Float64
 }
 
 public extension Path {
-
-    private struct SerializationConstants {
-        static let magicNumberVersion1: SerializationTypes.MagicNumber = 1223013157 // just a random number that helps us identify if the data is OK and saved in compatible version
+    private enum SerializationConstants {
+        static let magicNumberVersion1: SerializationTypes.MagicNumber = 1_223_013_157 // just a random number that helps us identify if the data is OK and saved in compatible version
         static let startComponentCommand: SerializationTypes.Command = 0
     }
 
     convenience init?(data: Data) {
-
         var components: [PathComponent] = []
 
         var commandCount: SerializationTypes.CommandCount = 0
@@ -91,9 +88,9 @@ public extension Path {
         guard stream.appendNativeValues(to: &commands, count: Int(commandCount)) else { return nil }
 
         // read the commands and coordinates
-        var currentPoints: [CGPoint] = []
+        var currentPoints: [Point] = []
         var currentOrders: [Int] = []
-        for i in 0..<commands.count {
+        for i in 0 ..< commands.count {
             let command = commands[i]
             var pointsToRead = Int(command)
             if command == SerializationConstants.startComponentCommand {
@@ -112,12 +109,12 @@ public extension Path {
             } else {
                 currentOrders.append(pointsToRead)
             }
-            for _ in 0..<pointsToRead {
+            for _ in 0 ..< pointsToRead {
                 var x: SerializationTypes.Coordinate = 0
                 var y: SerializationTypes.Coordinate = 0
                 guard stream.readNativeValue(&x) else { return nil }
                 guard stream.readNativeValue(&y) else { return nil }
-                let point = CGPoint(x: CGFloat(x), y: CGFloat(y))
+                let point = Point(x: Double(x), y: Double(y))
                 currentPoints.append(point)
             }
         }
@@ -128,16 +125,15 @@ public extension Path {
     }
 
     var data: Data {
-
-        let expectedCoordinatesCount = 2 * self.components.reduce(0) { $0 + $1.points.count }
-        let expectedCommandsCount = self.components.reduce(0) { $0 + $1.numberOfElements } + self.components.count
+        let expectedCoordinatesCount = 2 * components.reduce(0) { $0 + $1.points.count }
+        let expectedCommandsCount = components.reduce(0) { $0 + $1.numberOfElements } + components.count
 
         // compile the data into a format we can easily serialize
         var commands: [SerializationTypes.Command] = []
         commands.reserveCapacity(expectedCommandsCount)
         var coordinates: [SerializationTypes.Coordinate] = []
         coordinates.reserveCapacity(expectedCoordinatesCount)
-        for component in self.components {
+        for component in components {
             coordinates += component.points.flatMap { [SerializationTypes.Coordinate($0.x), SerializationTypes.Coordinate($0.y)] }
             commands.append(SerializationConstants.startComponentCommand)
             commands += component.orders.map { SerializationTypes.Command($0) }

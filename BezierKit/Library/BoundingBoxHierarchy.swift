@@ -6,13 +6,10 @@
 //  Copyright © 2018 Holmes Futrell. All rights reserved.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
 /// returns the power of two greater than or equal to a given value
-internal func roundUpPowerOfTwo(_ value: Int) -> Int {
+func roundUpPowerOfTwo(_ value: Int) -> Int {
     var result = 1
     while result < value {
         result = result << 1
@@ -36,14 +33,13 @@ private func parent(_ index: Int) -> Int {
 }
 
 /// a strict (complete and full) binary tree representing a hierarchy of bounding boxes for a list of path elements
-final internal class BoundingBoxHierarchy {
-
-    internal enum NodeType: Equatable {
+final class BoundingBoxHierarchy {
+    enum NodeType: Equatable {
         case leaf(elementIndex: Int)
         case `internal`(startingElementIndex: Int, endingElementIndex: Int)
     }
 
-    internal struct Node: Equatable {
+    struct Node: Equatable {
         let boundingBox: BoundingBox
         let type: NodeType
         init(boundingBox: BoundingBox, type: NodeType) {
@@ -56,7 +52,7 @@ final internal class BoundingBoxHierarchy {
     private let lastRowIndex: Int
     private let elementCount: Int
 
-    internal static func leafNodeIndexToElementIndex(_ nodeIndex: Int, elementCount: Int, lastRowIndex: Int) -> Int {
+    static func leafNodeIndexToElementIndex(_ nodeIndex: Int, elementCount: Int, lastRowIndex: Int) -> Int {
         assert(isLeaf(nodeIndex, elementCount: elementCount))
         var elementIndex = nodeIndex - lastRowIndex
         if elementIndex < 0 {
@@ -65,7 +61,7 @@ final internal class BoundingBoxHierarchy {
         return elementIndex
     }
 
-    internal static func elementIndexToNodeIndex(_ elementIndex: Int, elementCount: Int, lastRowIndex: Int) -> Int {
+    static func elementIndexToNodeIndex(_ elementIndex: Int, elementCount: Int, lastRowIndex: Int) -> Int {
         assert(elementIndex >= 0 && elementIndex < elementCount)
         var nodeIndex = elementIndex + lastRowIndex
         if nodeIndex >= 2 * elementCount - 1 {
@@ -75,17 +71,17 @@ final internal class BoundingBoxHierarchy {
     }
 
     private static func isLeaf(_ index: Int, elementCount: Int) -> Bool {
-        return index >= elementCount-1
+        return index >= elementCount - 1
     }
 
     var boundingBox: BoundingBox {
-        return self.boundingBoxes[0]
+        return boundingBoxes[0]
     }
 
     init(boxes elementBoxes: [BoundingBox]) {
         assert(!elementBoxes.isEmpty)
-        self.elementCount = elementBoxes.count
-        let inodeCount = self.elementCount-1 // in complete binary tree the number of inodes (internal nodes) is one fewer than the leafs
+        elementCount = elementBoxes.count
+        let inodeCount = elementCount - 1 // in complete binary tree the number of inodes (internal nodes) is one fewer than the leafs
         // compute `lastRowIndex` the index of the first leaf node in the bottom row of the tree
         var lastRowIndex = 0
         while lastRowIndex < inodeCount {
@@ -93,16 +89,16 @@ final internal class BoundingBoxHierarchy {
         }
         self.lastRowIndex = lastRowIndex
         // compute bounding boxes
-        let boxes = UnsafeMutablePointer<BoundingBox>.allocate(capacity: self.elementCount + inodeCount)
-        for i in 0..<self.elementCount {
-            let nodeIndex = i+inodeCount
-            let elementIndex = BoundingBoxHierarchy.leafNodeIndexToElementIndex(nodeIndex, elementCount: self.elementCount, lastRowIndex: lastRowIndex)
+        let boxes = UnsafeMutablePointer<BoundingBox>.allocate(capacity: elementCount + inodeCount)
+        for i in 0 ..< elementCount {
+            let nodeIndex = i + inodeCount
+            let elementIndex = BoundingBoxHierarchy.leafNodeIndexToElementIndex(nodeIndex, elementCount: elementCount, lastRowIndex: lastRowIndex)
             boxes[nodeIndex] = elementBoxes[elementIndex]
         }
-        for i in stride(from: inodeCount-1, through: 0, by: -1) {
+        for i in stride(from: inodeCount - 1, through: 0, by: -1) {
             boxes[i] = BoundingBox(first: boxes[left(i)], second: boxes[right(i)])
         }
-        self.boundingBoxes = UnsafePointer<BoundingBox>(boxes)
+        boundingBoxes = UnsafePointer<BoundingBox>(boxes)
     }
 
     deinit {
@@ -112,16 +108,16 @@ final internal class BoundingBoxHierarchy {
     func visit(callback: (Node, Int) -> Bool) {
         let elementCount = self.elementCount
         let lastRowIndex = self.lastRowIndex
-        let nodeCount    = 2 &* elementCount &- 1
-        let boxes = self.boundingBoxes
+        let nodeCount = 2 &* elementCount &- 1
+        let boxes = boundingBoxes
         func visitHelper(index: Int, depth: Int, maxLeafsInSubtree: Int, callback: (Node, Int) -> Bool) {
             let leaf = BoundingBoxHierarchy.isLeaf(index, elementCount: elementCount)
             let nodeType: NodeType
             if leaf {
                 nodeType = .leaf(elementIndex: BoundingBoxHierarchy.leafNodeIndexToElementIndex(index, elementCount: elementCount, lastRowIndex: lastRowIndex))
             } else {
-                var startingIndex   = maxLeafsInSubtree * ( index + 1 ) - 1
-                var endingIndex     = startingIndex + maxLeafsInSubtree - 1
+                var startingIndex = maxLeafsInSubtree * (index + 1) - 1
+                var endingIndex = startingIndex + maxLeafsInSubtree - 1
                 if endingIndex >= nodeCount {
                     endingIndex = parent(endingIndex)
                 }
@@ -148,19 +144,19 @@ final internal class BoundingBoxHierarchy {
     }
 
     func boundingBox(forElementIndex index: Int) -> BoundingBox {
-        return self.boundingBoxes[BoundingBoxHierarchy.elementIndexToNodeIndex(index, elementCount: self.elementCount, lastRowIndex: self.lastRowIndex)]
+        return boundingBoxes[BoundingBoxHierarchy.elementIndexToNodeIndex(index, elementCount: elementCount, lastRowIndex: lastRowIndex)]
     }
 
     func enumerateSelfIntersections(callback: (Int, Int) -> Void) {
-        self.enumerateIntersections(with: self, callback: callback)
+        enumerateIntersections(with: self, callback: callback)
     }
 
     func enumerateIntersections(with other: BoundingBoxHierarchy, callback: (Int, Int) -> Void) {
-        let elementCount1 = self.elementCount
+        let elementCount1 = elementCount
         let elementCount2 = other.elementCount
-        let boxes1 = self.boundingBoxes
+        let boxes1 = boundingBoxes
         let boxes2 = other.boundingBoxes
-        let lastRowIndex1 = self.lastRowIndex
+        let lastRowIndex1 = lastRowIndex
         let lastRowIndex2 = other.lastRowIndex
         func intersects(index: Int, callback: (Int, Int) -> Void) {
             if BoundingBoxHierarchy.isLeaf(index, elementCount: elementCount1) { // if it's a leaf node

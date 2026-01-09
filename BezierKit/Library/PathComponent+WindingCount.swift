@@ -6,20 +6,17 @@
 //  Copyright © 2019 Holmes Futrell. All rights reserved.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
-private func xIntercept<A: BezierCurve>(curve: A, y: CGFloat) -> CGFloat {
+private func xIntercept<A: BezierCurve>(curve: A, y: Double) -> Double {
     let startingPoint = curve.startingPoint
-    let endingPoint   = curve.endingPoint
+    let endingPoint = curve.endingPoint
     guard y != curve.startingPoint.y else { return curve.startingPoint.x }
     guard y != curve.endingPoint.y else { return curve.endingPoint.x }
-    let linearSolutionT = ( y - startingPoint.y ) / ( endingPoint.y - startingPoint.y )
+    let linearSolutionT = (y - startingPoint.y) / (endingPoint.y - startingPoint.y)
     let linearSolution = LineSegment(p0: startingPoint, p1: endingPoint).point(at: linearSolutionT).x
-    var solution: CGFloat?
-    func callback(_ root: CGFloat) {
+    var solution: Double?
+    func callback(_ root: Double) {
         guard root >= 0.0, root <= 1.0 else { return }
         solution = solution ?? root
     }
@@ -32,12 +29,12 @@ private func xIntercept<A: BezierCurve>(curve: A, y: CGFloat) -> CGFloat {
         break
     }
     if let solution = solution {
-        return curve.point(at: CGFloat(solution)).x
+        return curve.point(at: Double(solution)).x
     }
     return linearSolution
 }
 
-private func windingCountAdjustment(_ y: CGFloat, _ startY: CGFloat, _ endY: CGFloat) -> Int {
+private func windingCountAdjustment(_ y: Double, _ startY: Double, _ endY: Double) -> Int {
     if endY < y, y <= startY {
         return 1
     } else if startY < y, y <= endY {
@@ -47,7 +44,7 @@ private func windingCountAdjustment(_ y: CGFloat, _ startY: CGFloat, _ endY: CGF
     }
 }
 
-private func windingCountIncrementer<A: BezierCurve>(_ curve: A, boundingBox: BoundingBox, point: CGPoint) -> Int {
+private func windingCountIncrementer<A: BezierCurve>(_ curve: A, boundingBox: BoundingBox, point: Point) -> Int {
     if boundingBox.min.x > point.x { return 0 }
     // we include the highest point and exclude the lowest point
     // that ensures if the juncture between curves changes direction it's counted twice or not at all
@@ -57,21 +54,20 @@ private func windingCountIncrementer<A: BezierCurve>(_ curve: A, boundingBox: Bo
     if boundingBox.max.x >= point.x {
         // slowest path: must determine x intercept and test against it
         let x = xIntercept(curve: curve, y: point.y)
-        guard point.x > x else { return 0  }
+        guard point.x > x else { return 0 }
     }
     return increment
 }
 
-internal extension PathComponent {
-
+extension PathComponent {
     private func enumerateYMonotonicComponentsForQuadratic(at index: Int, callback: (_ curve: QuadraticCurve) -> Void) {
-        let curve = self.quadratic(at: index)
+        let curve = quadratic(at: index)
         let p0 = curve.p0
         let p1 = curve.p1
         let p2 = curve.p2
         let d0 = p1.y - p0.y
         let d1 = p2.y - p1.y
-        var last: CGFloat = 0.0
+        var last = 0.0
         Utils.droots(d0, d1) { t in
             guard t > 0, t < 1 else { return }
             callback(curve.split(from: last, to: t))
@@ -83,7 +79,7 @@ internal extension PathComponent {
     }
 
     private func enumerateYMonotonicComponentsForCubic(at index: Int, callback: (_ curve: CubicCurve) -> Void) {
-        let curve = self.cubic(at: index)
+        let curve = cubic(at: index)
         let p0 = curve.p0
         let p1 = curve.p1
         let p2 = curve.p2
@@ -91,7 +87,7 @@ internal extension PathComponent {
         let d0 = p1.y - p0.y
         let d1 = p2.y - p1.y
         let d2 = p3.y - p2.y
-        var last: CGFloat = 0.0
+        var last = 0.0
         Utils.droots(d0, d1, d2) { t in
             guard t > 0, t < 1 else { return }
             callback(curve.split(from: last, to: t))
@@ -102,12 +98,12 @@ internal extension PathComponent {
         }
     }
 
-    func windingCount(at point: CGPoint) -> Int {
-        guard self.isClosed, self.boundingBox.contains(point) else {
+    func windingCount(at point: Point) -> Int {
+        guard isClosed, boundingBox.contains(point) else {
             return 0
         }
-        var windingCount: Int = 0
-        self.bvh.visit { node, _ in
+        var windingCount = 0
+        bvh.visit { node, _ in
             let boundingBox = node.boundingBox
             guard boundingBox.min.y <= point.y, boundingBox.max.y >= point.y, boundingBox.min.x <= point.x else {
                 // ray cast from point in -x direction does not intersect node's bounding box, nothing to do
@@ -121,16 +117,16 @@ internal extension PathComponent {
                 let startingElementIndex: Int
                 let endingElementIndex: Int
                 switch node.type {
-                case .leaf(let index):
+                case let .leaf(index):
                     startingElementIndex = index
                     endingElementIndex = index
-                case .internal(let start, let end):
+                case let .internal(start, end):
                     startingElementIndex = start
                     endingElementIndex = end
                 }
-                let startingPoint    = self.startingPointForElement(at: startingElementIndex)
-                let endingPoint      = self.endingPointForElement(at: endingElementIndex)
-                windingCount         += windingCountAdjustment(point.y, startingPoint.y, endingPoint.y)
+                let startingPoint = self.startingPointForElement(at: startingElementIndex)
+                let endingPoint = self.endingPointForElement(at: endingElementIndex)
+                windingCount += windingCountAdjustment(point.y, startingPoint.y, endingPoint.y)
                 return false
             }
             guard case let .leaf(elementIndex) = node.type else {

@@ -5,19 +5,17 @@
 //  Created by Holmes Futrell on 2/23/21.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
 struct RootFindingConfiguration {
-    static let defaultErrorThreshold: CGFloat = 1e-5
-    static let minimumErrorThreshold: CGFloat = 1e-12
-    private(set) var errorThreshold: CGFloat
-    init(errorThreshold: CGFloat) {
+    static let defaultErrorThreshold: Double = 1e-5
+    static let minimumErrorThreshold: Double = 1e-12
+    private(set) var errorThreshold: Double
+    init(errorThreshold: Double) {
         precondition(errorThreshold >= RootFindingConfiguration.minimumErrorThreshold)
         self.errorThreshold = errorThreshold
     }
+
     static var `default`: RootFindingConfiguration {
         return Self(errorThreshold: RootFindingConfiguration.defaultErrorThreshold)
     }
@@ -27,7 +25,7 @@ extension BernsteinPolynomialN {
     /// Returns the unique, ordered real roots of the curve that fall within the unit interval `0 <= t <= 1`
     /// the roots are unique and ordered so that for  `i < j` they satisfy `root[i] < root[j]`
     /// - Returns: the array of roots
-    func distinctRealRootsInUnitInterval(configuration: RootFindingConfiguration = .default) -> [CGFloat] {
+    func distinctRealRootsInUnitInterval(configuration: RootFindingConfiguration = .default) -> [Double] {
         guard coefficients.contains(where: { $0 != .zero }) else { return [] }
         let result = BernsteinPolynomialN.rootsOfCurveMappedToRange(self, start: 0, end: 1, configuration: configuration)
         guard result.isEmpty == false else { return [] }
@@ -38,15 +36,16 @@ extension BernsteinPolynomialN {
             return result[i]
         }
     }
-    private static func rootsOfCurveMappedToRange(_ curve: BernsteinPolynomialN, start rangeStart: CGFloat, end rangeEnd: CGFloat, configuration: RootFindingConfiguration) -> [CGFloat] {
+
+    private static func rootsOfCurveMappedToRange(_ curve: BernsteinPolynomialN, start rangeStart: Double, end rangeEnd: Double, configuration: RootFindingConfiguration) -> [Double] {
         let n = curve.order
         // find the range where the convex hull of `curve2D` intersects the x-Axis
-        var lowerBound = CGFloat.infinity
-        var upperBound = -CGFloat.infinity
-        for i in 0..<n {
-            for j in i+1...n {
-                let p1 = CGPoint(x: CGFloat(i) / CGFloat(n), y: curve.coefficients[i])
-                let p2 = CGPoint(x: CGFloat(j) / CGFloat(n), y: curve.coefficients[j])
+        var lowerBound = Double.infinity
+        var upperBound = -Double.infinity
+        for i in 0 ..< n {
+            for j in i + 1 ... n {
+                let p1 = Point(x: Double(i) / Double(n), y: curve.coefficients[i])
+                let p2 = Point(x: Double(j) / Double(n), y: curve.coefficients[j])
                 guard p1.y != 0 || p2.y != 0 else {
                     assert(p2.x >= p1.x)
                     if p1.x < lowerBound { lowerBound = p1.x }
@@ -76,7 +75,7 @@ extension BernsteinPolynomialN {
         // split the curve in half and handle each half separately.
         guard upperBound - lowerBound < 0.8 else {
             let rangeMid = Utils.linearInterpolate(rangeStart, rangeEnd, 0.5)
-            var curveRoots: [CGFloat] = []
+            var curveRoots: [Double] = []
             let (left, right) = curve.split(at: 0.5)
             curveRoots += rootsOfCurveMappedToRange(left, start: rangeStart, end: rangeMid, configuration: configuration)
             curveRoots += rootsOfCurveMappedToRange(right, start: rangeMid, end: rangeEnd, configuration: configuration)
@@ -84,9 +83,9 @@ extension BernsteinPolynomialN {
         }
         // split the curve over the range where the convex hull intersected the
         // x-Axis and iterate.
-        var curveRoots: [CGFloat] = []
+        var curveRoots: [Double] = []
         let subcurve = curve.split(from: lowerBound, to: upperBound)
-        func skippedRoot(between first: CGFloat, and second: CGFloat) -> Bool {
+        func skippedRoot(between first: Double, and second: Double) -> Bool {
             // due to floating point roundoff, it is possible (although rare)
             // for the algorithm to sneak past a root. To avoid this problem
             // we make sure the curve doesn't change sign between the

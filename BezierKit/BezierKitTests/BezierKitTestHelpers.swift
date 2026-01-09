@@ -1,17 +1,54 @@
 //
-//  BezierKitTests.swift
+//  BezierKitTestHelpers.swift
 //  BezierKitTests
 //
 //  Created by Holmes Futrell on 10/28/16.
 //  Copyright © 2016 Holmes Futrell. All rights reserved.
 //
 
-import XCTest
 @testable import BezierKit
+import XCTest
+
+#if canImport(CoreGraphics)
+    import CoreGraphics
+
+    extension CGMutablePath {
+        func move(to point: Point) {
+            move(to: point.cgPoint)
+        }
+
+        func addLine(to point: Point) {
+            addLine(to: point.cgPoint)
+        }
+
+        func addQuadCurve(to point: Point, control: Point) {
+            addQuadCurve(to: point.cgPoint, control: control.cgPoint)
+        }
+
+        func addCurve(to point: Point, control1: Point, control2: Point) {
+            addCurve(to: point.cgPoint, control1: control1.cgPoint, control2: control2.cgPoint)
+        }
+
+        func addRect(_ rect: Rect) {
+            addRect(rect.cgRect)
+        }
+
+        func addLines(between points: [Point]) {
+            addLines(between: points.map(\.cgPoint))
+        }
+
+        func addEllipse(in rect: Rect) {
+            addEllipse(in: rect.cgRect)
+        }
+
+        func addArc(tangent1End: Point, tangent2End: Point, radius: Double) {
+            addArc(tangent1End: tangent1End.cgPoint, tangent2End: tangent2End.cgPoint, radius: radius)
+        }
+    }
+#endif
 
 class BezierKitTestHelpers {
-
-    static internal func intersections(_ intersections: [Intersection], betweenCurve c1: BezierCurve, andOtherCurve c2: BezierCurve, areWithinTolerance epsilon: CGFloat) -> Bool {
+    static func intersections(_ intersections: [Intersection], betweenCurve c1: BezierCurve, andOtherCurve c2: BezierCurve, areWithinTolerance epsilon: Double) -> Bool {
         for i in intersections {
             let p1 = c1.point(at: i.t1)
             let p2 = c2.point(at: i.t2)
@@ -22,7 +59,7 @@ class BezierKitTestHelpers {
         return true
     }
 
-    static internal func curveControlPointsEqual(curve1 c1: BezierCurve, curve2 c2: BezierCurve, tolerance epsilon: CGFloat) -> Bool {
+    static func curveControlPointsEqual(curve1 c1: BezierCurve, curve2 c2: BezierCurve, tolerance epsilon: Double) -> Bool {
         if c1.order != c2.order {
             return false
         }
@@ -32,7 +69,7 @@ class BezierKitTestHelpers {
         return true
     }
 
-    static internal func shape(_ s: Shape, matchesShape other: Shape, tolerance: CGFloat = 1.0e-6) -> Bool {
+    static func shape(_ s: Shape, matchesShape other: Shape, tolerance: Double = 1.0e-6) -> Bool {
         guard BezierKitTestHelpers.curve(s.forward, matchesCurve: other.forward, tolerance: tolerance) else {
             return false
         }
@@ -54,12 +91,12 @@ class BezierKitTestHelpers {
         return true
     }
 
-    static internal func curve(_ c1: BezierCurve, matchesCurve c2: BezierCurve, overInterval interval: Interval = Interval(start: 0.0, end: 1.0), tolerance: CGFloat = 1.0e-5) -> Bool {
+    static func curve(_ c1: BezierCurve, matchesCurve c2: BezierCurve, overInterval interval: Interval = Interval(start: 0.0, end: 1.0), tolerance: Double = 1.0e-5) -> Bool {
         // checks if c1 over [0, 1] matches c2 over [interval.start, interval.end]
         // useful for checking if splitting a curve over a given interval worked correctly
         let numPointsToCheck = 10
-        for i in 0..<numPointsToCheck {
-            let t1 = CGFloat(i) / CGFloat(numPointsToCheck-1)
+        for i in 0 ..< numPointsToCheck {
+            let t1 = Double(i) / Double(numPointsToCheck - 1)
             let t2 = interval.start * (1.0 - t1) + interval.end * t1
             if distance(c1.point(at: t1), c2.point(at: t2)) > tolerance {
                 return false
@@ -68,31 +105,31 @@ class BezierKitTestHelpers {
         return true
     }
 
-    private static func evaluatePolynomial(_ p: [CGFloat], at t: CGFloat) -> CGFloat {
-        var sum: CGFloat = 0.0
-        for n in 0..<p.count {
-            sum += p[p.count - n - 1] * pow(t, CGFloat(n))
+    private static func evaluatePolynomial(_ p: [Double], at t: Double) -> Double {
+        var sum = 0.0
+        for n in 0 ..< p.count {
+            sum += p[p.count - n - 1] * pow(t, Double(n))
         }
         return sum
     }
 
-    static func quadraticCurveFromPolynomials(_ f: [CGFloat], _ g: [CGFloat]) -> QuadraticCurve {
+    static func quadraticCurveFromPolynomials(_ f: [Double], _ g: [Double]) -> QuadraticCurve {
         precondition(f.count == 3 && g.count == 3)
-        let curve = QuadraticCurve(p0: CGPoint(x: f[2], y: g[2]),
-                                   p1: CGPoint(x: 0.5 * f[1] + f[2], y: 0.5 * g[1] + g[2]),
-                                   p2: CGPoint(x: f[0] + f[1] + f[2], y: g[0] + g[1] + g[2]))
+        let curve = QuadraticCurve(p0: Point(x: f[2], y: g[2]),
+                                   p1: Point(x: 0.5 * f[1] + f[2], y: 0.5 * g[1] + g[2]),
+                                   p2: Point(x: f[0] + f[1] + f[2], y: g[0] + g[1] + g[2]))
         return curve
     }
 
-    static func cubicCurveFromPolynomials(_ f: [CGFloat], _ g: [CGFloat]) -> CubicCurve {
+    static func cubicCurveFromPolynomials(_ f: [Double], _ g: [Double]) -> CubicCurve {
         precondition(f.count == 4 && g.count == 4)
         // create a cubic bezier curve from two polynomials
         // the first polynomial f[0] t^3 + f[1] t^2 + f[2] t + f[3] defines x(t) for the Bezier curve
         // the second polynomial g[0] t^3 + g[1] t^2 + g[2] t + g[3] defines y(t) for the Bezier curve
-        let p = CGPoint(x: f[0], y: g[0])
-        let q = CGPoint(x: f[1], y: g[1])
-        let r = CGPoint(x: f[2], y: g[2])
-        let s = CGPoint(x: f[3], y: g[3])
+        let p = Point(x: f[0], y: g[0])
+        let q = Point(x: f[1], y: g[1])
+        let r = Point(x: f[2], y: g[2])
+        let s = Point(x: f[3], y: g[3])
         let a = s
         let b = r / 3.0 + a
         let c = q / 3.0 + 2.0 * b - a
@@ -106,8 +143,8 @@ class BezierKitTestHelpers {
         guard result.first!.t1 == 0 else { return false }
         guard result.last!.t2 == 1 else { return false }
         // ensure contiguous ranges
-        for i in 0..<result.count-1 {
-            guard result[i].t2 == result[i+1].t1 else { return false }
+        for i in 0 ..< result.count - 1 {
+            guard result[i].t2 == result[i + 1].t1 else { return false }
         }
         // ensure that it conains the extrema
         let extrema = curve.extrema().all
@@ -122,9 +159,9 @@ class BezierKitTestHelpers {
         // ensure that we haven't divided things into too many curves
         for subcurve in result {
             let t = subcurve.t2
-            let isNearExtrema = extrema.contains { abs($0 - t) <= BezierKit.reduceStepSize  }
+            let isNearExtrema = extrema.contains { abs($0 - t) <= BezierKit.reduceStepSize }
             if !isNearExtrema && t != 1.0 {
-                if curve.split(from: subcurve.t1, to: Utils.clamp(t+BezierKit.reduceStepSize, 0, 1)).simple {
+                if curve.split(from: subcurve.t1, to: Utils.clamp(t + BezierKit.reduceStepSize, 0, 1)).simple {
                     return false // we could have expanded subcurve and still had a simple result
                 }
             }
@@ -132,23 +169,22 @@ class BezierKitTestHelpers {
         return true
     }
 
-//    static func quadraticCurveFromPolynomials(_ f: [CGFloat], _ g: [CGFloat]) -> QuadraticCurve {
+//    static func quadraticCurveFromPolynomials(_ f: [Double], _ g: [Double]) -> QuadraticCurve {
 //        precondition(f.count == 3 && g.count == 3)
 //        // create a quadratic bezier curve from two polynomials
 //        // the first polynomial f[0] t^2 + f[1] t + f[2] defines x(t) for the Bezier curve
 //        // the second polynomial g[0] t^2 + g[1] t + g[2] defines y(t) for the Bezier curve
-//        let q = CGPoint(x: f[0], y: g[0])
-//        let r = CGPoint(x: f[1], y: g[1])
-//        let s = CGPoint(x: f[2], y: g[2])
+//        let q = Point(x: f[0], y: g[0])
+//        let r = Point(x: f[1], y: g[1])
+//        let s = Point(x: f[2], y: g[2])
 //        let a = s
 //        let b = r / 3.0 + a
 //        let c = q / 3.0 + 2.0 * b - a
 //        // check that it worked
 //        let curve = QuadraticCurve(p0: a, p1: b, p2: c)
-//        for t: CGFloat in stride(from: 0, through: 1, by: 0.1) {
-//            assert(distance(curve.compute(t), CGPoint(x: evaluatePolynomial(f, at: t), y: evaluatePolynomial(g, at: t))) < 0.001, "internal error! failed to fit polynomial!")
+//        for t: Double in stride(from: 0, through: 1, by: 0.1) {
+//            assert(distance(curve.compute(t), Point(x: evaluatePolynomial(f, at: t), y: evaluatePolynomial(g, at: t))) < 0.001, "internal error! failed to fit polynomial!")
 //        }
 //        return curve
 //    }
-
 }

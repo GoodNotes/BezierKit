@@ -6,34 +6,33 @@
 //  Copyright © 2019 Holmes Futrell. All rights reserved.
 //
 
-import XCTest
 @testable import BezierKit
+import XCTest
 
 class UtilsTests: XCTestCase {
-
     func testClamp() {
         XCTAssertEqual(1.0, Utils.clamp(1.0, -1.0, 1.0))
         XCTAssertEqual(0.0, Utils.clamp(0.0, -1.0, 1.0))
         XCTAssertEqual(-1.0, Utils.clamp(-1.0, -1.0, 1.0))
         XCTAssertEqual(1.0, Utils.clamp(2.0, -1.0, 1.0))
         XCTAssertEqual(-1.0, Utils.clamp(-2.0, -1.0, 1.0))
-        XCTAssertEqual(-1.0, Utils.clamp(-CGFloat.infinity, -1.0, 1.0))
-        XCTAssertEqual(1.0, Utils.clamp(+CGFloat.infinity, -1.0, 1.0))
-        XCTAssertEqual(-20.0, Utils.clamp(-20.0, -CGFloat.infinity, 0.0))
-        XCTAssertEqual(20.0, Utils.clamp(20.0, 0.0, CGFloat.infinity))
-        XCTAssertTrue(Utils.clamp(CGFloat.nan, -1.0, 1.0).isNaN)
+        XCTAssertEqual(-1.0, Utils.clamp(-Double.infinity, -1.0, 1.0))
+        XCTAssertEqual(1.0, Utils.clamp(+Double.infinity, -1.0, 1.0))
+        XCTAssertEqual(-20.0, Utils.clamp(-20.0, -Double.infinity, 0.0))
+        XCTAssertEqual(20.0, Utils.clamp(20.0, 0.0, Double.infinity))
+        XCTAssertTrue(Utils.clamp(Double.nan, -1.0, 1.0).isNaN)
     }
 
-    private func drootsQuadraticTestHelper(_ a: CGFloat, _ b: CGFloat, _ c: CGFloat) -> [CGFloat] {
-        var roots: [CGFloat] = []
+    private func drootsQuadraticTestHelper(_ a: Double, _ b: Double, _ c: Double) -> [Double] {
+        var roots: [Double] = []
         Utils.droots(a, b, c) {
             roots.append($0)
         }
         return roots
     }
 
-    private func drootsCubicTestHelper(_ a: CGFloat, _ b: CGFloat, _ c: CGFloat, _ d: CGFloat) -> [CGFloat] {
-        var roots: [CGFloat] = []
+    private func drootsCubicTestHelper(_ a: Double, _ b: Double, _ c: Double, _ d: Double) -> [Double] {
+        var roots: [Double] = []
         Utils.droots(a, b, c, d) {
             roots.append($0)
         }
@@ -41,24 +40,24 @@ class UtilsTests: XCTestCase {
     }
 
     func testDrootsCubicWorldIssue1() {
-        var points: [CGPoint] = [
-            CGPoint(x: 523.4257521858988, y: 691.8949684622992),
-            CGPoint(x: 523.1393916834338, y: 691.8714265856051),
-            CGPoint(x: 522.8595588275791, y: 691.7501129962762),
-            CGPoint(x: 522.6404735257349, y: 691.531027694432)
+        var points: [Point] = [
+            Point(x: 523.4257521858988, y: 691.8949684622992),
+            Point(x: 523.1393916834338, y: 691.8714265856051),
+            Point(x: 522.8595588275791, y: 691.7501129962762),
+            Point(x: 522.6404735257349, y: 691.531027694432),
         ]
-        let y: CGFloat = 691.87778055040201
-        points = points.map { $0 - CGPoint(x: 0, y: y)}
+        let y = 691.87778055040201
+        points = points.map { $0 - Point(x: 0, y: y) }
         let r = drootsCubicTestHelper(points[0].y, points[1].y, points[2].y, points[3].y)
         let filtered = r.filter { $0 >= 0 && $0 <= 1 }
         XCTAssertEqual(filtered.count, 1)
-        XCTAssertEqual(filtered.first!, CGFloat(0.1499651773565319), accuracy: 1.0e-3)
+        XCTAssertEqual(filtered.first!, Double(0.1499651773565319), accuracy: 1.0e-3)
     }
 
 //    func testDrootsCubicWorldIssue2() {
 //        // this data is actually very close to a quadratic. It may get the wrong
 //        // answer is if is recognized as a cubic
-//        let points: [CGFloat] = [
+//        let points: [Double] = [
 //            0.0000010000090924222604,
 //            0.0000013261883395898622,
 //            -0.1484297874302456,
@@ -67,33 +66,33 @@ class UtilsTests: XCTestCase {
 //        let r = drootsCubicTestHelper(points[0], points[1], points[2], points[3])
 //        let filtered = r.filter { $0 >= 0 && $0 <= 1 }
 //        XCTAssertEqual(filtered.count, 1)
-//        XCTAssertEqual(filtered.first!, CGFloat(0.0014849), accuracy: 1.0e-4)
+//        XCTAssertEqual(filtered.first!, Double(0.0014849), accuracy: 1.0e-4)
 //    }
 
     func testDrootsCubicWorldIssue3() {
         // this data causes issue #81 on GitHub
         // discriminant is positive but very close to zero (8.46e-10)
         // https://github.com/hfutrell/BezierKit/issues/81
-        let firstValue: CGFloat = -14.999127297400882
-        let otherValues: CGFloat = 0.00087270259911775838
+        let firstValue: Double = -14.999127297400882
+        let otherValues = 0.00087270259911775838
         let roots = drootsCubicTestHelper(firstValue, otherValues, otherValues, otherValues)
         XCTAssertEqual(roots.count, 1)
-        XCTAssertEqual(roots[0], CGFloat(0.961251), accuracy: 1.0e-4)
+        XCTAssertEqual(roots[0], Double(0.961251), accuracy: 1.0e-4)
     }
 
     func testDrootsQuadratic() {
-        let a: CGFloat = 0.36159566118413977
-        let b: CGFloat = -3.2979288390483816
-        let c: CGFloat = 3.5401259561374445
+        let a = 0.36159566118413977
+        let b: Double = -3.2979288390483816
+        let c = 3.5401259561374445
         let roots = drootsQuadraticTestHelper(a, b, c)
-        let accuracy: CGFloat = 1.0e-5
-        XCTAssertEqual(roots[0], CGFloat(0.053511820486391165), accuracy: accuracy)
-        XCTAssertEqual(roots[1], CGFloat(0.64370120305889711), accuracy: accuracy)
+        let accuracy = 1.0e-5
+        XCTAssertEqual(roots[0], Double(0.053511820486391165), accuracy: accuracy)
+        XCTAssertEqual(roots[1], Double(0.64370120305889711), accuracy: accuracy)
     }
 
     func testDrootsQuadraticEdgeCases() {
-        let oneThird = CGFloat(1.0 / 3.0)
-        let twoThirds = CGFloat(2.0 / 3.0)
+        let oneThird = Double(1.0 / 3.0)
+        let twoThirds = Double(2.0 / 3.0)
         XCTAssertEqual(drootsQuadraticTestHelper(3, 6, 12), [-1])
         XCTAssertEqual(drootsQuadraticTestHelper(12, 6, 3), [2])
         XCTAssertEqual(drootsQuadraticTestHelper(12, 6, 4), [])
@@ -101,19 +100,19 @@ class UtilsTests: XCTestCase {
         XCTAssertEqual(drootsQuadraticTestHelper(1, 1, 1), [])
         XCTAssertEqual(drootsQuadraticTestHelper(4, -5, 4), [oneThird, twoThirds])
         XCTAssertEqual(drootsQuadraticTestHelper(-4, 5, -4), [oneThird, twoThirds])
-        XCTAssertEqual(drootsQuadraticTestHelper(CGFloat.nan, CGFloat.nan, CGFloat.nan), [])
+        XCTAssertEqual(drootsQuadraticTestHelper(Double.nan, Double.nan, Double.nan), [])
     }
 
     func testLinesIntersection() {
-        let p0 = CGPoint(x: 1, y: 2)
-        let p1 = CGPoint(x: 3, y: 4)
-        let p2 = CGPoint(x: 1, y: 4)
-        let p3 = CGPoint(x: 3, y: 2)
-        let p4 = CGPoint(x: 1, y: 3)
-        let p5 = CGPoint(x: 3, y: 5)
-        let nanPoint = CGPoint(x: CGFloat.nan, y: CGFloat.nan)
+        let p0 = Point(x: 1, y: 2)
+        let p1 = Point(x: 3, y: 4)
+        let p2 = Point(x: 1, y: 4)
+        let p3 = Point(x: 3, y: 2)
+        let p4 = Point(x: 1, y: 3)
+        let p5 = Point(x: 3, y: 5)
+        let nanPoint = Point(x: Double.nan, y: Double.nan)
         // basic cases
-        XCTAssertEqual(CGPoint(x: 2, y: 3), Utils.linesIntersection(p0, p1, p2, p3), "these lines should intersect.")
+        XCTAssertEqual(Point(x: 2, y: 3), Utils.linesIntersection(p0, p1, p2, p3), "these lines should intersect.")
         XCTAssertNil(Utils.linesIntersection(p0, p1, p4, p5), "these lines should NOT intersect.")
         // degenerate case
         XCTAssertNil(Utils.linesIntersection(nanPoint, nanPoint, p0, p1), "nothing should intersect a line that includes NaN values.")
@@ -131,8 +130,8 @@ class UtilsTests: XCTestCase {
         XCTAssertEqual(Utils.map(5, 4, 6, 8, 12), 10, "midpoint of [4, 6] should map to midpoint of [8, 12] (which is 10)")
         XCTAssertEqual(Utils.map(0.75, 0, 1, 4, 8), 7, "75% the way between 0 and 1 should map to 75% between 4 and 8 (which is 7)")
         // might fail for precision reasons
-        let tStart: CGFloat = 0.16559884114811005
-        let tEnd: CGFloat = 0.45268493225341283
+        let tStart = 0.16559884114811005
+        let tEnd = 0.45268493225341283
         XCTAssertEqual(Utils.map(0, 0, 1, tStart, tEnd), tStart, "start of first interval (0) should map to start of second interval exactly (tStart)")
         XCTAssertEqual(Utils.map(1, 0, 1, tStart, tEnd), tEnd, "end of first interval (1) should map to end of second interval exactly (tEnd)")
     }

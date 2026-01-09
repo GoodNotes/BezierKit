@@ -6,19 +6,15 @@
 //  Copyright © 2016 Holmes Futrell. All rights reserved.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
 /**
  Cubic Bézier Curve
  */
 public struct CubicCurve: NonlinearBezierCurve, Equatable {
+    public var p0, p1, p2, p3: Point
 
-    public var p0, p1, p2, p3: CGPoint
-
-    public var points: [CGPoint] {
+    public var points: [Point] {
         return [p0, p1, p2, p3]
     }
 
@@ -26,7 +22,7 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         return 3
     }
 
-    public var startingPoint: CGPoint {
+    public var startingPoint: Point {
         get {
             return p0
         }
@@ -35,7 +31,7 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         }
     }
 
-    public var endingPoint: CGPoint {
+    public var endingPoint: Point {
         get {
             return p3
         }
@@ -46,15 +42,15 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
 
     // MARK: - Initializers
 
-    public init(points: [CGPoint]) {
+    public init(points: [Point]) {
         precondition(points.count == 4)
-        self.p0 = points[0]
-        self.p1 = points[1]
-        self.p2 = points[2]
-        self.p3 = points[3]
+        p0 = points[0]
+        p1 = points[1]
+        p2 = points[2]
+        p3 = points[3]
     }
 
-    public init(p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint) {
+    public init(p0: Point, p1: Point, p2: Point, p3: Point) {
         self.p0 = p0
         self.p1 = p1
         self.p2 = p2
@@ -62,8 +58,8 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
     }
 
     public init(lineSegment: LineSegment) {
-        let oneThird: CGFloat = 1.0 / 3.0
-        let twoThirds: CGFloat = 2.0 / 3.0
+        let oneThird = 1.0 / 3.0
+        let twoThirds = 2.0 / 3.0
         self.init(p0: lineSegment.p0,
                   p1: twoThirds * lineSegment.p0 + oneThird * lineSegment.p1,
                   p2: oneThird * lineSegment.p0 + twoThirds * lineSegment.p1,
@@ -71,18 +67,18 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
     }
 
     public init(quadratic: QuadraticCurve) {
-        let oneThird: CGFloat = 1.0 / 3.0
-        let twoThirds: CGFloat = 2.0 / 3.0
+        let oneThird = 1.0 / 3.0
+        let twoThirds = 2.0 / 3.0
         self.init(p0: quadratic.p0,
                   p1: twoThirds * quadratic.p1 + oneThird * quadratic.p0,
                   p2: oneThird * quadratic.p2 + twoThirds * quadratic.p1,
                   p3: quadratic.p2)
     }
 
-    var downgradedToQuadratic: (quadratic: QuadraticCurve, error: CGFloat) {
-        let line = LineSegment(p0: self.startingPoint, p1: self.endingPoint)
+    var downgradedToQuadratic: (quadratic: QuadraticCurve, error: Double) {
+        let line = LineSegment(p0: startingPoint, p1: endingPoint)
         let d1 = self.p1 - line.point(at: 1.0 / 3.0)
-        let d2 = self.p2 - line.point(at: 2.0 / 3.0)
+        let d2 = p2 - line.point(at: 2.0 / 3.0)
         let d = 0.5 * d1 + 0.5 * d2
         let p1 = 1.5 * d + line.point(at: 0.5)
         let error = 0.144334 * (d1 - d2).length
@@ -92,27 +88,26 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         return (quadratic: quadratic, error: error)
     }
 
-    var downgradedToLineSegment: (lineSegment: LineSegment, error: CGFloat) {
-        let line = LineSegment(p0: self.startingPoint, p1: self.endingPoint)
-        let d1 = self.p1 - line.point(at: 1.0 / 3.0)
-        let d2 = self.p2 - line.point(at: 2.0 / 3.0)
+    var downgradedToLineSegment: (lineSegment: LineSegment, error: Double) {
+        let line = LineSegment(p0: startingPoint, p1: endingPoint)
+        let d1 = p1 - line.point(at: 1.0 / 3.0)
+        let d2 = p2 - line.point(at: 2.0 / 3.0)
         let dmaxx = max(d1.x * d1.x, d2.x * d2.x)
         let dmaxy = max(d1.y * d1.y, d2.y * d2.y)
         let error = 3 / 4 * sqrt(dmaxx + dmaxy)
         return (lineSegment: line, error: error)
     }
 
-/**
-     Returns a CubicCurve which passes through three provided points: a starting point `start`, and ending point `end`, and an intermediate point `mid` at an optional t-value `t`.
-     
-- parameter start: the starting point of the curve
-- parameter end: the ending point of the curve
-- parameter mid: an intermediate point falling on the curve
-- parameter t: optional t-value at which the curve will pass through the point `mid` (default = 0.5)
-- parameter d: optional strut length with the full strut being length d * (1-t)/t. If omitted or `nil` the distance from `mid` to the baseline (line from `start` to `end`) is used.
-*/
-    public init(start: CGPoint, end: CGPoint, mid: CGPoint, t: CGFloat = 0.5, d: CGFloat? = nil) {
+    /**
+          Returns a CubicCurve which passes through three provided points: a starting point `start`, and ending point `end`, and an intermediate point `mid` at an optional t-value `t`.
 
+     - parameter start: the starting point of the curve
+     - parameter end: the ending point of the curve
+     - parameter mid: an intermediate point falling on the curve
+     - parameter t: optional t-value at which the curve will pass through the point `mid` (default = 0.5)
+     - parameter d: optional strut length with the full strut being length d * (1-t)/t. If omitted or `nil` the distance from `mid` to the baseline (line from `start` to `end`) is used.
+     */
+    public init(start: Point, end: Point, mid: Point, t: Double = 0.5, d: Double? = nil) {
         let s = start
         let b = mid
         let e = end
@@ -129,11 +124,11 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         let b2 = d2 * l
 
         // derivation of new hull coordinates
-        let e1  = b - b1
-        let e2  = b + b2
-        let A   = abc.A
-        let v1  = A + (e1 - A) / oneMinusT
-        let v2  = A + (e2 - A) / t
+        let e1 = b - b1
+        let e2 = b + b2
+        let A = abc.A
+        let v1 = A + (e1 - A) / oneMinusT
+        let v2 = A + (e2 - A) / t
         let nc1 = s + (v1 - s) / t
         let nc2 = e + (v2 - e) / oneMinusT
         // ...done
@@ -144,65 +139,64 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
 
     public var simple: Bool {
         guard p0 != p1 || p1 != p2 || p2 != p3 else { return true }
-        let a1 = Utils.angle(o: self.p0, v1: self.p3, v2: self.p1)
-        let a2 = Utils.angle(o: self.p0, v1: self.p3, v2: self.p2)
-        if a1>0 && a2<0 || a1<0 && a2>0 {
+        let a1 = Utils.angle(o: p0, v1: p3, v2: p1)
+        let a2 = Utils.angle(o: p0, v1: p3, v2: p2)
+        if a1 > 0 && a2 < 0 || a1 < 0 && a2 > 0 {
             return false
         }
-        let n1 = self.normal(at: 0)
-        let n2 = self.normal(at: 1)
+        let n1 = normal(at: 0)
+        let n2 = normal(at: 1)
         let s = Utils.clamp(n1.dot(n2), -1.0, 1.0)
-        let angle: CGFloat = CGFloat(abs(acos(Double(s))))
-        return angle < (CGFloat.pi / 3.0)
+        let angle = Double(abs(acos(Double(s))))
+        return angle < (Double.pi / 3.0)
     }
 
-    public func normal(at t: CGFloat) -> CGPoint {
-        var d = self.derivative(at: t)
-        if d == CGPoint.zero, t == 0.0 || t == 1.0 {
+    public func normal(at t: Double) -> Point {
+        var d = derivative(at: t)
+        if d == Point.zero, t == 0.0 || t == 1.0 {
             if t == 0.0 {
                 d = p2 - p0
             } else {
                 d = p3 - p1
             }
-            if d == CGPoint.zero {
+            if d == Point.zero {
                 d = p3 - p0
             }
         }
         return d.perpendicular.normalize()
     }
 
-    public func derivative(at t: CGFloat) -> CGPoint {
-        let mt: CGFloat = 1-t
-        let k: CGFloat = 3
+    public func derivative(at t: Double) -> Point {
+        let mt: Double = 1 - t
+        let k: Double = 3
         let p0 = k * (self.p1 - self.p0)
         let p1 = k * (self.p2 - self.p1)
-        let p2 = k * (self.p3 - self.p2)
-        let a = mt*mt
-        let b = mt*t*2
-        let c = t*t
+        let p2 = k * (p3 - self.p2)
+        let a = mt * mt
+        let b = mt * t * 2
+        let c = t * t
         // making the final sum one line of code makes XCode take forever to compiler! Hence the temporary variables.
-        let temp1 = a*p0
-        let temp2 = b*p1
-        let temp3 = c*p2
+        let temp1 = a * p0
+        let temp2 = b * p1
+        let temp3 = c * p2
         return temp1 + temp2 + temp3
     }
 
-    public func split(from t1: CGFloat, to t2: CGFloat) -> CubicCurve {
+    public func split(from t1: Double, to t2: Double) -> CubicCurve {
         guard t1 != 0.0 || t2 != 1.0 else { return self }
         let k = (t2 - t1) / 3.0
-        let p0 = self.point(at: t1)
-        let p3 = self.point(at: t2)
-        let p1 = p0 + k * self.derivative(at: t1)
-        let p2 = p3 - k * self.derivative(at: t2)
+        let p0 = point(at: t1)
+        let p3 = point(at: t2)
+        let p1 = p0 + k * derivative(at: t1)
+        let p2 = p3 - k * derivative(at: t2)
         return CubicCurve(p0: p0, p1: p1, p2: p2, p3: p3)
     }
 
-    public func split(at t: CGFloat) -> (left: CubicCurve, right: CubicCurve) {
-
-        let h0 = self.p0
-        let h1 = self.p1
-        let h2 = self.p2
-        let h3 = self.p3
+    public func split(at t: Double) -> (left: CubicCurve, right: CubicCurve) {
+        let h0 = p0
+        let h1 = p1
+        let h2 = p2
+        let h3 = p3
         let h4 = Utils.linearInterpolate(h0, h1, t)
         let h5 = Utils.linearInterpolate(h1, h2, t)
         let h6 = Utils.linearInterpolate(h2, h3, t)
@@ -210,18 +204,17 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         let h8 = Utils.linearInterpolate(h5, h6, t)
         let h9 = Utils.linearInterpolate(h7, h8, t)
 
-        let leftCurve  = CubicCurve(p0: h0, p1: h4, p2: h7, p3: h9)
+        let leftCurve = CubicCurve(p0: h0, p1: h4, p2: h7, p3: h9)
         let rightCurve = CubicCurve(p0: h9, p1: h8, p2: h6, p3: h3)
 
         return (left: leftCurve, right: rightCurve)
-
     }
 
-    public func project(_ point: CGPoint) -> (point: CGPoint, t: CGFloat) {
-        func mul(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
-            return CGPoint(x: a.x * b.x, y: a.y * b.y)
+    public func project(_ point: Point) -> (point: Point, t: Double) {
+        func mul(_ a: Point, _ b: Point) -> Point {
+            return Point(x: a.x * b.x, y: a.y * b.y)
         }
-        let c = self.copy(using: CGAffineTransform(translationX: -point.x, y: -point.y))
+        let c = copy(using: AffineTransform(translationX: -point.x, y: -point.y))
         let q = QuadraticCurve(p0: self.p1 - self.p0, p1: self.p2 - self.p1, p2: self.p3 - self.p2)
         // p0, p1, p2, p3 form the control points of a Cubic Bezier Curve formed
         // by multiplying the polynomials q and l
@@ -235,9 +228,9 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         let dd1 = 3 * mul(c.p1 - 2 * c.p2 + c.p3, q.p2) + 6 * mul(c.p3 - c.p2, q.p2 - q.p1) + mul(c.p3, q.p2 - 2 * q.p1 + q.p0)
         let p3 = 2 * p4 - p5 + dd1
 
-        let lengthSquaredStart  = c.p0.lengthSquared
-        let lengthSquaredEnd    = c.p3.lengthSquared
-        var minimumT: CGFloat = 0.0
+        let lengthSquaredStart = c.p0.lengthSquared
+        let lengthSquaredEnd = c.p3.lengthSquared
+        var minimumT = 0.0
         var minimumDistanceSquared = lengthSquaredStart
         if lengthSquaredEnd < lengthSquaredStart {
             minimumT = 1.0
@@ -253,31 +246,30 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
                                               b5: p5.x + p5.y)
         for t in findDistinctRootsInUnitInterval(of: polynomial) {
             guard t > 0.0, t < 1.0 else { break }
-            let point = c.point(at: CGFloat(t))
+            let point = c.point(at: Double(t))
             let distanceSquared = point.lengthSquared
             if distanceSquared < minimumDistanceSquared {
                 minimumDistanceSquared = distanceSquared
-                minimumT = CGFloat(t)
+                minimumT = Double(t)
             }
         }
         return (point: self.point(at: minimumT), t: minimumT)
     }
 
     public var boundingBox: BoundingBox {
+        let p0: Point = self.p0
+        let p1: Point = self.p1
+        let p2: Point = self.p2
+        let p3: Point = self.p3
 
-        let p0: CGPoint = self.p0
-        let p1: CGPoint = self.p1
-        let p2: CGPoint = self.p2
-        let p3: CGPoint = self.p3
-
-        var mmin = CGPoint.min(p0, p3)
-        var mmax = CGPoint.max(p0, p3)
+        var mmin = Point.min(p0, p3)
+        var mmax = Point.max(p0, p3)
 
         let d0 = p1 - p0
         let d1 = p2 - p1
         let d2 = p3 - p2
 
-        for d in 0..<CGPoint.dimensions {
+        for d in 0 ..< Point.dimensions {
             let mmind = mmin[d]
             let mmaxd = mmax[d]
             let value1 = p1[d]
@@ -285,7 +277,7 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
             guard value1 < mmind || value1 > mmaxd || value2 < mmind || value2 > mmaxd else {
                 continue
             }
-            Utils.droots(d0[d], d1[d], d2[d]) {(t: CGFloat) in
+            Utils.droots(d0[d], d1[d], d2[d]) { (t: Double) in
                 guard t > 0.0, t < 1.0 else { return }
                 let value = self.point(at: t)[d]
                 if value < mmind {
@@ -298,46 +290,46 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         return BoundingBox(min: mmin, max: mmax)
     }
 
-    public func point(at t: CGFloat) -> CGPoint {
+    public func point(at t: Double) -> Point {
         if t == 0 {
-            return self.p0
+            return p0
         } else if t == 1 {
-            return self.p3
+            return p3
         }
         let mt = 1.0 - t
-        let mt2: CGFloat    = mt*mt
-        let t2: CGFloat     = t*t
+        let mt2: Double = mt * mt
+        let t2: Double = t * t
         let a = mt2 * mt
         let b = mt2 * t * 3.0
         let c = mt * t2 * 3.0
         let d = t * t2
         // usage of temp variables are because of Swift Compiler error 'Expression was too complex to be solved in reasonable time; consider breaking up the expression into distinct sub extpressions'
-        let temp1 = a * self.p0
-        let temp2 = b * self.p1
-        let temp3 = c * self.p2
-        let temp4 = d * self.p3
+        let temp1 = a * p0
+        let temp2 = b * p1
+        let temp3 = c * p2
+        let temp4 = d * p3
         return temp1 + temp2 + temp3 + temp4
     }
 }
 
 extension CubicCurve: Transformable {
-    public func copy(using t: CGAffineTransform) -> CubicCurve {
-        return CubicCurve(p0: self.p0.applying(t), p1: self.p1.applying(t), p2: self.p2.applying(t), p3: self.p3.applying(t))
+    public func copy(using t: AffineTransform) -> CubicCurve {
+        return CubicCurve(p0: p0.applying(t), p1: p1.applying(t), p2: p2.applying(t), p3: p3.applying(t))
     }
 }
 
 extension CubicCurve: Reversible {
     public func reversed() -> CubicCurve {
-        return CubicCurve(p0: self.p3, p1: self.p2, p2: self.p1, p3: self.p0)
+        return CubicCurve(p0: p3, p1: p2, p2: p1, p3: p0)
     }
 }
 
 extension CubicCurve: Flatness {
-    public var flatnessSquared: CGFloat {
-        let a: CGPoint = 3.0 * self.p1 - 2.0 * self.p0 - self.p3
-        let b: CGPoint = 3.0 * self.p2 - self.p0 - 2.0 * self.p3
+    public var flatnessSquared: Double {
+        let a: Point = 3.0 * p1 - 2.0 * p0 - p3
+        let b: Point = 3.0 * p2 - p0 - 2.0 * p3
         let temp1 = max(a.x * a.x, b.x * b.x)
         let temp2 = max(a.y * a.y, b.y * b.y)
-        return (1.0 / 16.0) * ( temp1 + temp2 )
+        return (1.0 / 16.0) * (temp1 + temp2)
     }
 }

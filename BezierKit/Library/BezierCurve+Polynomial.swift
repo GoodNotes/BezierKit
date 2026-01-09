@@ -6,9 +6,6 @@
 //  Copyright © 2021 Holmes Futrell. All rights reserved.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
 /// a parametric function whose x and y coordinates can be considered as separate polynomial functions
@@ -20,34 +17,34 @@ public protocol ComponentPolynomials {
 }
 
 extension LineSegment: ComponentPolynomials {
-    public var xPolynomial: BernsteinPolynomial1 { return BernsteinPolynomial1(b0: self.p0.x, b1: self.p1.x) }
-    public var yPolynomial: BernsteinPolynomial1 { return BernsteinPolynomial1(b0: self.p0.y, b1: self.p1.y) }
+    public var xPolynomial: BernsteinPolynomial1 { return BernsteinPolynomial1(b0: p0.x, b1: p1.x) }
+    public var yPolynomial: BernsteinPolynomial1 { return BernsteinPolynomial1(b0: p0.y, b1: p1.y) }
 }
 
 extension QuadraticCurve: ComponentPolynomials {
-    public var xPolynomial: BernsteinPolynomial2 { return BernsteinPolynomial2(b0: self.p0.x, b1: self.p1.x, b2: self.p2.x) }
-    public var yPolynomial: BernsteinPolynomial2 { return BernsteinPolynomial2(b0: self.p0.y, b1: self.p1.y, b2: self.p2.y) }
+    public var xPolynomial: BernsteinPolynomial2 { return BernsteinPolynomial2(b0: p0.x, b1: p1.x, b2: p2.x) }
+    public var yPolynomial: BernsteinPolynomial2 { return BernsteinPolynomial2(b0: p0.y, b1: p1.y, b2: p2.y) }
 }
 
 extension CubicCurve: ComponentPolynomials {
-    public var xPolynomial: BernsteinPolynomial3 { return BernsteinPolynomial3(b0: self.p0.x, b1: self.p1.x, b2: self.p2.x, b3: self.p3.x) }
-    public var yPolynomial: BernsteinPolynomial3 { return BernsteinPolynomial3(b0: self.p0.y, b1: self.p1.y, b2: self.p2.y, b3: self.p3.y) }
+    public var xPolynomial: BernsteinPolynomial3 { return BernsteinPolynomial3(b0: p0.x, b1: p1.x, b2: p2.x, b3: p3.x) }
+    public var yPolynomial: BernsteinPolynomial3 { return BernsteinPolynomial3(b0: p0.y, b1: p1.y, b2: p2.y, b3: p3.y) }
 }
 
-extension BezierCurve where Self: ComponentPolynomials {
+public extension BezierCurve where Self: ComponentPolynomials {
     /// default implementation of `extrema` by finding roots of component polynomials
-    public func extrema() -> (x: [CGFloat], y: [CGFloat], all: [CGFloat]) {
-        func rootsForPolynomial<B: BernsteinPolynomial>(_ polynomial: B) -> [CGFloat] {
+    func extrema() -> (x: [Double], y: [Double], all: [Double]) {
+        func rootsForPolynomial<B: BernsteinPolynomial>(_ polynomial: B) -> [Double] {
             let firstOrderDerivative = polynomial.derivative
             var roots = findDistinctRootsInUnitInterval(of: firstOrderDerivative)
-            if self.order >= 3 {
+            if order >= 3 {
                 let secondOrderDerivative = firstOrderDerivative.derivative
                 roots += findDistinctRootsInUnitInterval(of: secondOrderDerivative)
             }
             return roots.sortedAndUniqued()
         }
-        let xRoots = rootsForPolynomial(self.xPolynomial)
-        let yRoots = rootsForPolynomial(self.yPolynomial)
+        let xRoots = rootsForPolynomial(xPolynomial)
+        let yRoots = rootsForPolynomial(yPolynomial)
         let allRoots = (xRoots + yRoots).sortedAndUniqued()
         return (x: xRoots, y: yRoots, all: allRoots)
     }

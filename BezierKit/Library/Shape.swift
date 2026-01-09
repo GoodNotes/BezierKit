@@ -6,9 +6,6 @@
 //  Copyright © 2018 Holmes Futrell. All rights reserved.
 //
 
-#if canImport(CoreGraphics)
-import CoreGraphics
-#endif
 import Foundation
 
 public struct ShapeIntersection: Equatable {
@@ -28,28 +25,29 @@ public struct Shape: Equatable {
             self.curve = curve
             self.virtual = virtual
         }
+
         public static func == (lhs: Cap, rhs: Cap) -> Bool {
             return lhs.curve == rhs.curve && lhs.virtual == rhs.virtual
         }
     }
 
-    public static let defaultShapeIntersectionThreshold: CGFloat = 0.5
+    public static let defaultShapeIntersectionThreshold: Double = 0.5
     public let startcap: Cap
     public let endcap: Cap
     public let forward: BezierCurve
     public let back: BezierCurve
 
-    internal init(_ forward: BezierCurve, _ back: BezierCurve, _ startCapVirtual: Bool, _ endCapVirtual: Bool) {
-        let start  = LineSegment(p0: back.endingPoint, p1: forward.startingPoint)
-        let end    = LineSegment(p0: forward.endingPoint, p1: back.startingPoint)
-        self.startcap = Shape.Cap(curve: start, virtual: startCapVirtual)
-        self.endcap = Shape.Cap(curve: end, virtual: endCapVirtual)
+    init(_ forward: BezierCurve, _ back: BezierCurve, _ startCapVirtual: Bool, _ endCapVirtual: Bool) {
+        let start = LineSegment(p0: back.endingPoint, p1: forward.startingPoint)
+        let end = LineSegment(p0: forward.endingPoint, p1: back.startingPoint)
+        startcap = Shape.Cap(curve: start, virtual: startCapVirtual)
+        endcap = Shape.Cap(curve: end, virtual: endCapVirtual)
         self.forward = forward
         self.back = back
     }
 
     public var boundingBox: BoundingBox {
-        return self.nonvirtualSegments().reduce(BoundingBox.empty) {
+        return nonvirtualSegments().reduce(BoundingBox.empty) {
             BoundingBox(first: $0, second: $1.boundingBox)
         }
     }
@@ -68,12 +66,12 @@ public struct Shape: Equatable {
         return segments
     }
 
-    public func intersects(shape other: Shape, accuracy: CGFloat = BezierKit.defaultIntersectionAccuracy) -> [ShapeIntersection] {
-        if self.boundingBox.overlaps(other.boundingBox) == false {
+    public func intersects(shape other: Shape, accuracy: Double = BezierKit.defaultIntersectionAccuracy) -> [ShapeIntersection] {
+        if boundingBox.overlaps(other.boundingBox) == false {
             return []
         }
         var intersections: [ShapeIntersection] = []
-        let a1: [BezierCurve] = self.nonvirtualSegments()
+        let a1: [BezierCurve] = nonvirtualSegments()
         let a2: [BezierCurve] = other.nonvirtualSegments()
         for l1 in a1 {
             for l2 in a2 {

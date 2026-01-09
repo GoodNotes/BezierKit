@@ -6,17 +6,16 @@
 //  Copyright © 2019 Holmes Futrell. All rights reserved.
 //
 
-import XCTest
 @testable import BezierKit
+import XCTest
 
- // because Swift tuples don't work with `Equatable` in Swift 4
+// because Swift tuples don't work with `Equatable` in Swift 4
 private struct Tuple: Equatable, Hashable {
     var first: Int
     var second: Int
 }
 
 class BoundingBoxHierarchyTests: XCTestCase {
-
     // initializer
     // intersects()
     // intersects(node:)
@@ -25,8 +24,8 @@ class BoundingBoxHierarchyTests: XCTestCase {
         // in this test each bounding box is identical and therefore
         // each bounding box overlaps. What we are testing here is that
         // the callback is invoked exactly once for each i <= j
-        let box = BoundingBox(p1: CGPoint(x: 1, y: 2),
-                              p2: CGPoint(x: 4, y: 5))
+        let box = BoundingBox(p1: Point(x: 1, y: 2),
+                              p2: Point(x: 4, y: 5))
         let bvh = BoundingBoxHierarchy(boxes: [BoundingBox](repeating: box, count: 5))
         var visitedSet = Set<Tuple>()
         bvh.enumerateSelfIntersections { i, j in
@@ -36,8 +35,8 @@ class BoundingBoxHierarchyTests: XCTestCase {
         }
         let expectedSet = { () -> Set<Tuple> in
             var set = Set<Tuple>()
-            for i in 0...4 {
-                for j in i...4 {
+            for i in 0 ... 4 {
+                for j in i ... 4 {
                     set.insert(Tuple(first: i, second: j))
                 }
             }
@@ -47,9 +46,9 @@ class BoundingBoxHierarchyTests: XCTestCase {
     }
 
     func testBoundingBoxForElement() {
-        let boxes: [BoundingBox] = [BoundingBox(p1: CGPoint(x: 1, y: 2), p2: CGPoint(x: 3, y: 4)),
-                                    BoundingBox(p1: CGPoint(x: 5, y: 6), p2: CGPoint(x: 7, y: 8)),
-                                    BoundingBox(p1: CGPoint(x: 9, y: 10), p2: CGPoint(x: 11, y: 12))]
+        let boxes: [BoundingBox] = [BoundingBox(p1: Point(x: 1, y: 2), p2: Point(x: 3, y: 4)),
+                                    BoundingBox(p1: Point(x: 5, y: 6), p2: Point(x: 7, y: 8)),
+                                    BoundingBox(p1: Point(x: 9, y: 10), p2: Point(x: 11, y: 12))]
         let bvh = BoundingBoxHierarchy(boxes: boxes)
         XCTAssertEqual(bvh.boundingBox(forElementIndex: 0), boxes[0])
         XCTAssertEqual(bvh.boundingBox(forElementIndex: 1), boxes[1])
@@ -109,22 +108,22 @@ class BoundingBoxHierarchyTests: XCTestCase {
 
     /// test that when we visit a bounding volume hierarchy the leaf node elementIndex and internal node start and end element indexes are correct
     func testVisitElementIndexes() {
-        let sampleBox = BoundingBox(min: CGPoint.zero, max: CGPoint.zero)
+        let sampleBox = BoundingBox(min: Point.zero, max: Point.zero)
 
         // simplest possible case (1 leaf node)
-        let bvh1 = self.constructTestHierarchy(leafNodeCount: 1, repeatingBoundingBox: sampleBox)
+        let bvh1 = constructTestHierarchy(leafNodeCount: 1, repeatingBoundingBox: sampleBox)
         let result1 = createListFromAllNodesVisited(in: bvh1)
         XCTAssertEqual(result1, [leafNode(elementIndex: 0, box: sampleBox)])
 
         // simplest case with internal node
-        let bvh2 = self.constructTestHierarchy(leafNodeCount: 2, repeatingBoundingBox: sampleBox)
+        let bvh2 = constructTestHierarchy(leafNodeCount: 2, repeatingBoundingBox: sampleBox)
         let result2 = createListFromAllNodesVisited(in: bvh2)
         XCTAssertEqual(result2, [internalNode(start: 0, end: 1, box: sampleBox),
                                  leafNode(elementIndex: 0, box: sampleBox),
                                  leafNode(elementIndex: 1, box: sampleBox)])
 
         // a more complex case where leaf nodes exist on different levels of the tree
-        let bvh3 = self.constructTestHierarchy(leafNodeCount: 5, repeatingBoundingBox: sampleBox)
+        let bvh3 = constructTestHierarchy(leafNodeCount: 5, repeatingBoundingBox: sampleBox)
         let result3 = createListFromAllNodesVisited(in: bvh3)
         XCTAssertEqual(result3, [internalNode(start: 0, end: 4, box: sampleBox),
                                  internalNode(start: 0, end: 2, box: sampleBox),

@@ -285,12 +285,9 @@ class PathTests: XCTestCase {
             let path2 = Path(cgPath: CGPath(ellipseIn: rect.cgRect, transform: nil))
             let path3 = Path(cgPath: CGPath(rect: rect.cgRect, transform: nil))
 
-            let string = "hello" as NSString
-
-            XCTAssertFalse(path1.isEqual(nil))
-            XCTAssertFalse(path1.isEqual(string))
-            XCTAssertFalse(path1.isEqual(path2))
-            XCTAssertTrue(path1.isEqual(path3))
+            XCTAssertEqual(path1, path1)
+            XCTAssertNotEqual(path1, path2)
+            XCTAssertEqual(path1, path3)
         }
 
         func testHashing() {
@@ -313,18 +310,7 @@ class PathTests: XCTestCase {
         func testEncodeDecode() {
             let rect = Rect(origin: Point(x: -1, y: -1), size: CGSize(width: 2, height: 2))
             let path = Path(cgPath: CGPath(rect: rect.cgRect, transform: nil))
-            let decodedPath: Path?
-            if #available(OSX 10.13, iOS 11.0, *) {
-                if let data = try? NSKeyedArchiver.archivedData(withRootObject: path, requiringSecureCoding: true) {
-                    decodedPath = try? NSKeyedUnarchiver.unarchivedObject(ofClasses: [Path.self, NSData.self], from: data) as? Path
-                } else {
-                    decodedPath = nil
-                }
-            } else {
-                // Fallback on earlier versions
-                let data = NSKeyedArchiver.archivedData(withRootObject: path)
-                decodedPath = NSKeyedUnarchiver.unarchiveObject(with: data) as? Path
-            }
+            let decodedPath = Path(data: path.data)
             XCTAssertEqual(decodedPath, path)
         }
 
@@ -1737,18 +1723,7 @@ class PathTests: XCTestCase {
                                 p3: Point(x: 1.8175, y: 6.9295))
             let path = Path(components: [PathComponent(curves: [l1, q1, l2, c1])])
 
-            let decodedPath: Path?
-            if #available(OSX 10.13, iOS 11.0, *) {
-                if let data = try? NSKeyedArchiver.archivedData(withRootObject: path, requiringSecureCoding: true) {
-                    decodedPath = try? NSKeyedUnarchiver.unarchivedObject(ofClasses: [Path.self, NSData.self], from: data) as? Path
-                } else {
-                    decodedPath = nil
-                }
-            } else {
-                // Fallback on earlier versions
-                let data = NSKeyedArchiver.archivedData(withRootObject: path)
-                decodedPath = NSKeyedUnarchiver.unarchiveObject(with: data) as? Path
-            }
+            let decodedPath = Path(data: path.data)
             XCTAssertEqual(path, decodedPath)
         }
     #endif

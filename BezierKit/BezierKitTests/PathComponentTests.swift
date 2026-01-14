@@ -100,13 +100,9 @@ class PathComponentTests: XCTestCase {
         altC1.p2.x = -0.25
         let pathComponent3 = PathComponent(curves: [l1, q1, l2, altC1])
 
-        let string = "hello!" as NSString
-
-        XCTAssertFalse(pathComponent1.isEqual(string))
-        XCTAssertFalse(pathComponent1.isEqual(nil))
-        XCTAssertTrue(pathComponent1.isEqual(pathComponent1))
-        XCTAssertTrue(pathComponent1.isEqual(pathComponent2))
-        XCTAssertFalse(pathComponent1.isEqual(pathComponent3))
+        XCTAssertEqual(pathComponent1, pathComponent1)
+        XCTAssertEqual(pathComponent1, pathComponent2)
+        XCTAssertNotEqual(pathComponent1, pathComponent3)
     }
 
     func testHashing() {

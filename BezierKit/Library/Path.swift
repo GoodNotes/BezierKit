@@ -30,34 +30,19 @@ func windingCountImpliesContainment(_ count: Int, using rule: PathFillRule) -> B
     }
 }
 
-open class Path: NSObject {
-    /// lock to make external accessing of lazy vars threadsafe
-    private let lock = UnfairLock()
-
+public struct Path: Hashable {
     public var isEmpty: Bool {
         return components.isEmpty // components are not allowed to be empty
     }
 
-    public var boundingBox: BoundingBox {
-        return lock.sync { self._boundingBox }
-    }
+    public let components: [PathComponent]
+
+    public let boundingBox: BoundingBox
 
     /// the smallest bounding box completely enclosing the points of the path, includings its control points.
-    public var boundingBoxOfPath: BoundingBox {
-        return lock.sync { self._boundingBoxOfPath }
-    }
+    public let boundingBoxOfPath: BoundingBox
 
-    private lazy var _boundingBox: BoundingBox = self.components.reduce(BoundingBox.empty) {
-        BoundingBox(first: $0, second: $1.boundingBox)
-    }
-
-    private lazy var _boundingBoxOfPath: BoundingBox = self.components.reduce(BoundingBox.empty) {
-        BoundingBox(first: $0, second: $1.boundingBoxOfPath)
-    }
-
-    private var _hash: Int?
-
-    public let components: [PathComponent]
+    public let hash: Int
 
     public func selfIntersects(accuracy: Double = BezierKit.defaultIntersectionAccuracy) -> Bool {
         return !selfIntersections(accuracy: accuracy).isEmpty
@@ -103,25 +88,31 @@ open class Path: NSObject {
         return intersections
     }
 
-    #if canImport(ObjectiveC)
-        @objc override public convenience init() {
-            self.init(components: [])
-        }
-    #else
-        override public convenience init() {
-            self.init(components: [])
-        }
-    #endif
-
-    public required init(components: [PathComponent]) {
-        self.components = components
+    public init() {
+        self.init(components: [])
     }
 
-    public convenience init(curve: BezierCurve) {
+    public init(components: [PathComponent]) {
+        var hasher = Hasher()
+        var boundingBox = BoundingBox.empty
+        var boundingBoxOfPath = BoundingBox.empty
+        for component in components {
+            hasher.combine(component)
+            boundingBox.union(component.boundingBox)
+            boundingBoxOfPath.union(component.boundingBoxOfPath)
+        }
+
+        self.components = components
+        self.boundingBox = boundingBox
+        self.boundingBoxOfPath = boundingBoxOfPath
+        hash = hasher.finalize()
+    }
+
+    public init(curve: BezierCurve) {
         self.init(components: [PathComponent(curve: curve)])
     }
 
-    convenience init(rect: Rect) {
+    init(rect: Rect) {
         let o = rect.origin
         let points = [o,
                       Point(x: o.x + rect.size.width, y: o.y),
@@ -130,35 +121,6 @@ open class Path: NSObject {
                       o]
         let component = PathComponent(points: points, orders: [Int](repeating: 1, count: 4))
         self.init(components: [component])
-    }
-
-    // MARK: - NSCoding
-
-    // (cannot be put in extension because init?(coder:) is a designated initializer)
-
-    public static var supportsSecureCoding: Bool {
-        return true
-    }
-
-    #if !os(WASI)
-        public func encode(with aCoder: NSCoder) {
-            aCoder.encode(data)
-        }
-
-        public required convenience init?(coder aDecoder: NSCoder) {
-            guard let data = aDecoder.decodeData() else { return nil }
-            self.init(data: data)
-        }
-    #endif
-
-    // MARK: -
-
-    override open func isEqual(_ object: Any?) -> Bool {
-        // override is needed because NSObject implementation of isEqual(_:) uses pointer equality
-        guard let otherPath = object as? Path else {
-            return false
-        }
-        return components == otherPath.components
     }
 
     private func assertValidComponent(_ location: IndexedPathLocation) {
@@ -180,19 +142,17 @@ open class Path: NSObject {
         return components[location.componentIndex].normal(at: location.locationInComponent)
     }
 
-    func windingCount(_ point: Point, ignoring: PathComponent? = nil) -> Int {
-        let windingCount = components.reduce(0) {
-            if $1 !== ignoring {
-                return $0 + $1.windingCount(at: point)
-            } else {
-                return $0
-            }
+    func windingCount(_ point: Point, ignoringComponentAt ignoringIndex: Int? = nil) -> Int {
+        var result = 0
+        for (index, component) in components.enumerated() {
+            guard index != ignoringIndex else { continue }
+            result += component.windingCount(at: point)
         }
-        return windingCount
+        return result
     }
 
     public func contains(_ point: Point, using rule: PathFillRule = .winding) -> Bool {
-        let count = windingCount(point)
+        let count = windingCount(point, ignoringComponentAt: nil)
         return windingCountImpliesContainment(count, using: rule)
     }
 
@@ -221,8 +181,8 @@ open class Path: NSObject {
         var outerComponents: [PathComponent: [PathComponent]] = [:]
         var innerComponents: [PathComponent] = []
         // determine which components are outer and which are inner
-        for component in components {
-            let windingCount = self.windingCount(component.startingPoint, ignoring: component)
+        for (index, component) in components.enumerated() {
+            let windingCount = self.windingCount(component.startingPoint, ignoringComponentAt: index)
             if windingCountImpliesContainment(windingCount, using: rule) {
                 innerComponents.append(component)
             } else {
@@ -246,35 +206,27 @@ open class Path: NSObject {
         }
         return outerComponents.values.map { Path(components: $0) }
     }
-
-    override public var hash: Int {
-        // override is needed because NSObject hashing is independent of Swift's Hashable
-        return lock.sync {
-            if let _hash = _hash { return _hash }
-            var hasher = Hasher()
-            for component in components {
-                hasher.combine(component)
-            }
-            let h = hasher.finalize()
-            _hash = h
-            return h
-        }
-    }
 }
-
-#if !os(WASI)
-    extension Path: NSSecureCoding {}
-#endif
 
 extension Path: Transformable {
     public func copy(using t: AffineTransform) -> Self {
-        return type(of: self).init(components: components.map { $0.copy(using: t) })
+        return Self(components: components.map { $0.copy(using: t) })
     }
 }
 
 extension Path: Reversible {
     public func reversed() -> Self {
-        return type(of: self).init(components: components.map { $0.reversed() })
+        return Self(components: components.map { $0.reversed() })
+    }
+}
+
+public extension Path {
+    static func == (lhs: Path, rhs: Path) -> Bool {
+        return lhs.components == rhs.components
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(hash)
     }
 }
 

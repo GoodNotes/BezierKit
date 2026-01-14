@@ -12,7 +12,7 @@ import XCTest
 #if !os(WASI)
     class LockTests: XCTestCase {
         func testPathPropertyAtomicity() {
-            // ensure that lazy properties of Path are only initialized once
+            // ensure Path computed properties are thread-safe/deterministic
             let rect = Rect(x: 0, y: 0, width: 1, height: 1)
             let path = Path(rect: rect)
 
@@ -45,8 +45,9 @@ import XCTest
 
             #if canImport(CoreGraphics)
                 XCTAssertEqual(cgPaths.values.count, threadCount)
-                XCTAssertEqual(cgPaths[0], Path(rect: rect).cgPath)
-                XCTAssertTrue(cgPaths.values.allSatisfy { $0 === cgPaths[0] }, "cgPaths should all refer to the same instance (was it initialized more than once?)")
+                let expected = Path(rect: rect).cgPath
+                XCTAssertNotNil(cgPaths[0])
+                XCTAssertTrue(cgPaths.values.allSatisfy { $0 == expected }, "cgPaths should all be structurally equal")
             #endif
 
             let expectedBoundingBox = Path(rect: rect).boundingBox

@@ -70,7 +70,7 @@ public extension Path {
         static let startComponentCommand: SerializationTypes.Command = 0
     }
 
-    convenience init?(data: Data) {
+    init?(data: Data) {
         var components: [PathComponent] = []
 
         var commandCount: SerializationTypes.CommandCount = 0

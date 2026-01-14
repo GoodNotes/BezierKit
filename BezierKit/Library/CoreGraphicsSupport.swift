@@ -154,26 +154,16 @@
 
     // MARK: - Path <-> CGPath boundary
 
-    private let _pathCGPathCacheLock = UnfairLock()
-    private let _pathCGPathCache = NSMapTable<Path, CGPath>(keyOptions: .weakMemory, valueOptions: .strongMemory)
-
     public extension Path {
         var cgPath: CGPath {
-            _pathCGPathCacheLock.sync {
-                if let cached = _pathCGPathCache.object(forKey: self) {
-                    return cached
-                }
-                let mutablePath = CGMutablePath()
-                for component in self.components {
-                    component.appendPath(to: mutablePath)
-                }
-                let built = mutablePath.copy()!
-                _pathCGPathCache.setObject(built, forKey: self)
-                return built
+            let mutablePath = CGMutablePath()
+            for component in components {
+                component.appendPath(to: mutablePath)
             }
+            return mutablePath.copy()!
         }
 
-        convenience init(cgPath: CGPath) {
+        init(cgPath: CGPath) {
             final class PathApplierFunctionContext {
                 var currentPoint: Point?
                 var componentStartPoint: Point?
@@ -257,7 +247,7 @@
             }
         }
 
-        internal convenience init(rect: CGRect) {
+        internal init(rect: CGRect) {
             self.init(rect: Rect(rect))
         }
     }

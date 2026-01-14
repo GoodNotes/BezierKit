@@ -8,12 +8,10 @@
 
 import Foundation
 
-open class PathComponent: NSObject, Reversible, Transformable {
+public struct PathComponent: Hashable, Reversible, Transformable {
     private let offsets: [Int]
     public let points: [Point]
     public let orders: [Int]
-    /// lock to make external accessing of lazy vars threadsafe
-    private let lock = UnfairLock()
 
     public var curves: [BezierCurve] { // in most cases use element(at:)
         return (0 ..< numberOfElements).map {
@@ -21,22 +19,14 @@ open class PathComponent: NSObject, Reversible, Transformable {
         }
     }
 
-    private lazy var _bvh: BoundingBoxHierarchy = .init(boxes: (0 ..< self.numberOfElements).map { self.element(at: $0).boundingBox })
+    let bvh: BoundingBoxHierarchy
 
-    private var _hash: Int?
+    public let boundingBoxOfPath: BoundingBox
+    public let hash: Int
+    public let length: Double
 
-    private lazy var _boundingBoxOfPath: BoundingBox = {
-        var boundingBoxOfPath = BoundingBox.empty
-        points.withUnsafeBufferPointer { buffer in
-            for point in buffer {
-                boundingBoxOfPath.union(point)
-            }
-        }
-        return boundingBoxOfPath
-    }()
-
-    var bvh: BoundingBoxHierarchy {
-        return lock.sync { self._bvh }
+    public var boundingBox: BoundingBox {
+        bvh.boundingBox
     }
 
     public var numberOfElements: Int {
@@ -117,58 +107,98 @@ open class PathComponent: NSObject, Reversible, Transformable {
         return orders[index]
     }
 
-    public required init(points: [Point], orders: [Int]) {
+    public init(points: [Point], orders: [Int]) {
         // TODO: I don't like that this constructor is exposed, but for certain performance critical things you need it
+        precondition(orders.isEmpty == false, "Path components are by definition non-empty.")
+
+        let expectedPointsCount = orders.reduce(1, +)
+        assert(points.count == expectedPointsCount)
+
+        var cursor = 0
+        var hasher = Hasher()
+        var offsets: [Int] = []
+        var totalLength: Double = 0
+        var boxes: [BoundingBox] = []
+        var bboxOfPath = BoundingBox.empty
+
+        offsets.reserveCapacity(orders.count)
+        boxes.reserveCapacity(orders.count)
+
+        func hashAndUnionToBox(_ point: Point) {
+            hasher.combine(point.x)
+            hasher.combine(point.y)
+            bboxOfPath.union(point)
+        }
+
+        hashAndUnionToBox(points[0])
+        for order in orders {
+            hasher.combine(order)
+            offsets.append(cursor)
+
+            switch order {
+            case 3:
+                let curve = CubicCurve(p0: points[cursor], p1: points[cursor + 1], p2: points[cursor + 2], p3: points[cursor + 3])
+                hashAndUnionToBox(points[cursor + 1])
+                hashAndUnionToBox(points[cursor + 2])
+                hashAndUnionToBox(points[cursor + 3])
+                totalLength += curve.length()
+                boxes.append(curve.boundingBox)
+            case 2:
+                let curve = QuadraticCurve(p0: points[cursor], p1: points[cursor + 1], p2: points[cursor + 2])
+                hashAndUnionToBox(points[cursor + 1])
+                hashAndUnionToBox(points[cursor + 2])
+                totalLength += curve.length()
+                boxes.append(curve.boundingBox)
+            case 1:
+                let curve = LineSegment(p0: points[cursor], p1: points[cursor + 1])
+                hashAndUnionToBox(points[cursor + 1])
+                totalLength += curve.length()
+                boxes.append(curve.boundingBox)
+            case 0:
+                boxes.append(BoundingBox(p1: points[cursor], p2: points[cursor]))
+            default:
+                assertionFailure("unexpected curve order \(order). Expected between 0 (point) and 3 (cubic curve).")
+            }
+
+            cursor += order
+        }
+
+        // cursor is now sum(orders). Ensure we consumed the expected number of points.
+        assert(cursor + 1 == points.count)
+
         self.points = points
         self.orders = orders
-        let expectedPointsCount = orders.reduce(1) { result, value in
-            result + value
-        }
-        assert(points.count == expectedPointsCount)
-        offsets = PathComponent.computeOffsets(from: self.orders)
+        self.offsets = offsets
+        bvh = BoundingBoxHierarchy(boxes: boxes)
+        boundingBoxOfPath = bboxOfPath
+        hash = hasher.finalize()
+        length = totalLength
     }
 
-    public convenience init(curve: BezierCurve) {
+    public init(curve: BezierCurve) {
         self.init(curves: [curve])
-    }
-
-    private static func computeOffsets(from orders: [Int]) -> [Int] {
-        return [Int](unsafeUninitializedCapacity: orders.count) { buffer, initializedCount in
-            var sum = 0
-            buffer[0] = 0
-            for i in 1 ..< orders.count {
-                sum += orders[i - 1]
-                buffer[i] = sum
-            }
-            initializedCount = orders.count
-        }
     }
 
     public init(curves: [BezierCurve]) {
         precondition(curves.isEmpty == false, "Path components are by definition non-empty.")
 
-        orders = curves.map { $0.order }
-        offsets = PathComponent.computeOffsets(from: orders)
-
-        var temp: [Point] = [curves.first!.startingPoint]
-        temp.reserveCapacity(offsets.last! + orders.last! + 1)
-        for curf in curves {
-            assert(curf.startingPoint == temp.last!, "curves are not contiguous.")
-            temp += curf.points[1...]
+        var orders: [Int] = []
+        var points: [Point] = []
+        var pointsCount = 0
+        orders.reserveCapacity(curves.count)
+        for curve in curves {
+            pointsCount += curve.order
+            orders.append(curve.order)
         }
-        points = temp
-    }
 
-    public var length: Double {
-        return curves.reduce(0.0) { $0 + $1.length() }
-    }
+        points.reserveCapacity(pointsCount + 1)
+        points.append(curves.first!.startingPoint)
+        for curve in curves {
+            assert(curve.startingPoint == points.last!, "curves are not contiguous.")
+            points.append(contentsOf: curve.points[1...])
+        }
 
-    public var boundingBox: BoundingBox {
-        return bvh.boundingBox
-    }
-
-    public var boundingBoxOfPath: BoundingBox {
-        return lock.sync { _boundingBoxOfPath }
+        self = .init(points: points, orders: orders)
     }
 
     public var isClosed: Bool {
@@ -333,33 +363,6 @@ open class PathComponent: NSObject, Reversible, Transformable {
 
     // MARK: -
 
-    override open func isEqual(_ object: Any?) -> Bool {
-        // override is needed because NSObject implementation of isEqual(_:) uses pointer equality
-        guard let otherPathComponent = object as? PathComponent else {
-            return false
-        }
-        return orders == otherPathComponent.orders && points == otherPathComponent.points
-    }
-
-    override public var hash: Int {
-        // override is needed because NSObject hashing is independent of Swift's Hashable
-        return lock.sync {
-            if let _hash = _hash { return _hash }
-            var hasher = Hasher()
-            orders.withUnsafeBytes {
-                hasher.combine(bytes: $0)
-            }
-            points.withUnsafeBytes {
-                hasher.combine(bytes: $0)
-            }
-            let h = hasher.finalize()
-            _hash = h
-            return h
-        }
-    }
-
-    // MARK: -
-
     private func assertLocationHasValidElementIndex(_ location: IndexedPathComponentLocation) {
         assert(location.elementIndex >= 0 && location.elementIndex < numberOfElements)
     }
@@ -448,7 +451,7 @@ open class PathComponent: NSObject, Reversible, Transformable {
         }
     }
 
-    open func split(standardizedRange range: PathComponentRange, bias: PathComponentBias) -> Self {
+    public func split(standardizedRange range: PathComponentRange, bias: PathComponentBias) -> Self {
         assert(range.isStandardized)
         guard !isPoint else { return self }
 
@@ -543,14 +546,14 @@ open class PathComponent: NSObject, Reversible, Transformable {
                 start: range.start,
                 end: range.end
             )
-            return type(of: self).init(points: resultPoints, orders: resultOrders)
+            return Self(points: resultPoints, orders: resultOrders)
 
         case .outer:
             let (resultPoints, resultOrders) = splitOuter(
                 start: range.start,
                 end: range.end
             )
-            return type(of: self).init(points: resultPoints, orders: resultOrders)
+            return Self(points: resultPoints, orders: resultOrders)
         }
     }
 
@@ -564,12 +567,80 @@ open class PathComponent: NSObject, Reversible, Transformable {
         return split(range: PathComponentRange(from: start, to: end), bias: bias)
     }
 
-    open func reversed() -> Self {
-        return type(of: self).init(points: points.reversed(), orders: orders.reversed())
+    public func reversed() -> Self {
+        return Self(points: points.reversed(), orders: orders.reversed())
     }
 
-    open func copy(using t: AffineTransform) -> Self {
-        return type(of: self).init(points: points.map { $0.applying(t) }, orders: orders)
+    public func copy(using t: AffineTransform) -> Self {
+        return Self(points: points.map { $0.applying(t) }, orders: orders)
+    }
+}
+
+public extension PathComponent {
+    static func == (lhs: PathComponent, rhs: PathComponent) -> Bool {
+        return lhs.orders == rhs.orders && lhs.points == rhs.points
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(hash)
+    }
+}
+
+private extension PathComponent {
+    static func computeBoundingBoxOfPathAndHash(points: [Point], orders: [Int]) -> (boundingBoxOfPath: BoundingBox, hash: Int) {
+        var hasher = Hasher()
+        orders.withUnsafeBytes {
+            hasher.combine(bytes: $0)
+        }
+        var boundingBoxOfPath = BoundingBox.empty
+        points.withUnsafeBufferPointer { buffer in
+            for point in buffer {
+                boundingBoxOfPath.union(point)
+                hasher.combine(point.x)
+                hasher.combine(point.y)
+            }
+        }
+        return (boundingBoxOfPath, hasher.finalize())
+    }
+
+    static func computeElementBoundingBoxes(points: [Point], orders: [Int], offsets: [Int]) -> [BoundingBox] {
+        assert(orders.count == offsets.count)
+        return points.withUnsafeBufferPointer { p in
+            [BoundingBox](unsafeUninitializedCapacity: orders.count) { buffer, initializedCount in
+                for elementIndex in 0 ..< orders.count {
+                    let order = orders[elementIndex]
+                    let offset = offsets[elementIndex]
+                    let box: BoundingBox
+                    switch order {
+                    case 3:
+                        box = CubicCurve(
+                            p0: p[offset],
+                            p1: p[offset + 1],
+                            p2: p[offset + 2],
+                            p3: p[offset + 3]
+                        ).boundingBox
+                    case 2:
+                        box = QuadraticCurve(
+                            p0: p[offset],
+                            p1: p[offset + 1],
+                            p2: p[offset + 2]
+                        ).boundingBox
+                    case 1:
+                        box = LineSegment(
+                            p0: p[offset],
+                            p1: p[offset + 1]
+                        ).boundingBox
+                    case 0:
+                        let pt = p[offset]
+                        box = LineSegment(p0: pt, p1: pt).boundingBox
+                    default:
+                        fatalError("unexpected curve order \(order). Expected between 0 (point) and 3 (cubic curve).")
+                    }
+                    buffer[elementIndex] = box
+                }
+                initializedCount = orders.count
+            }
+        }
     }
 }
 

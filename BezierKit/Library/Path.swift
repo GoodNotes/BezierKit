@@ -6,7 +6,9 @@
 //  Copyright © 2018 Holmes Futrell. All rights reserved.
 //
 
+#if canImport(ObjectiveC)
 import Foundation
+#endif
 
 private extension Array {
     /// if an array has unused capacity returns a new array where `self.count == self.capacity`

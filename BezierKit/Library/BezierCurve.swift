@@ -6,8 +6,6 @@
 //  Copyright © 2017 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 public struct Subcurve<CurveType> where CurveType: BezierCurve {
     public let t1: Double
     public let t2: Double
@@ -332,6 +330,6 @@ public protocol Flatness: BezierCurve {
 
 public extension Flatness {
     var flatness: Double {
-        return sqrt(flatnessSquared)
+        return BezierMath.sqrt(flatnessSquared)
     }
 }

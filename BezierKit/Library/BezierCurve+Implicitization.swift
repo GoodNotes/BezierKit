@@ -6,8 +6,6 @@
 //  Copyright © 2021 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 protocol Implicitizeable {
     var implicitPolynomial: ImplicitPolynomial { get }
 }
@@ -91,7 +89,7 @@ struct ImplicitPolynomial {
         var sum: Double = 0
         for i in 0 ... order {
             for j in 0 ... order {
-                sum += coefficient(i, j) * pow(x, Double(i)) * pow(y, Double(j))
+                sum += coefficient(i, j) * BezierMath.pow(x, Double(i)) * BezierMath.pow(y, Double(j))
             }
         }
         return sum

@@ -5,8 +5,6 @@
 //  Created by Holmes Futrell on 2/23/21.
 //
 
-import Foundation
-
 struct RootFindingConfiguration {
     static let defaultErrorThreshold: Double = 1e-5
     static let minimumErrorThreshold: Double = 1e-12

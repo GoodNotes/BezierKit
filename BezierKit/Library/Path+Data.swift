@@ -6,7 +6,11 @@
 //  Copyright © 2019 Holmes Futrell. All rights reserved.
 //
 
+#if canImport(FoundationEssentials)
+import FoundationEssentials
+#else
 import Foundation
+#endif
 
 private extension Data {
     mutating func appendNativeValue<U>(_ value: U) {

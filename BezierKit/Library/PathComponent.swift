@@ -6,8 +6,6 @@
 //  Copyright © 2016 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 public struct PathComponent: Hashable, Reversible, Transformable {
     private let offsets: [Int]
     public let points: [Point]

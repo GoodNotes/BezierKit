@@ -6,8 +6,6 @@
 //  Copyright © 2016 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 // MARK: - Geometry primitives (CoreGraphics-independent)
 
 public struct Point: Hashable {
@@ -194,7 +192,7 @@ public struct BoundingBox: Equatable {
             let temp = point[$1] - Utils.clamp(point[$1], self.min[$1], self.max[$1])
             return $0 + temp * temp
         }
-        return sqrt(distanceSquared)
+        return BezierMath.sqrt(distanceSquared)
     }
 
     func upperBoundOfDistance(to point: Point) -> Double {
@@ -203,6 +201,6 @@ public struct BoundingBox: Equatable {
             let diff2 = point[$1] - self.max[$1]
             return $0 + Double.maximum(diff1 * diff1, diff2 * diff2)
         }
-        return sqrt(distanceSquared)
+        return BezierMath.sqrt(distanceSquared)
     }
 }

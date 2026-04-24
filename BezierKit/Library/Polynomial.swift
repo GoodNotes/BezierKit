@@ -6,8 +6,6 @@
 //  Copyright © 2020 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 public protocol BernsteinPolynomial: Equatable {
     func value(at x: Double) -> Double
     var order: Int { get }

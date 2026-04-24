@@ -6,8 +6,6 @@
 //  Copyright © 2018 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 /// returns the power of two greater than or equal to a given value
 func roundUpPowerOfTwo(_ value: Int) -> Int {
     var result = 1

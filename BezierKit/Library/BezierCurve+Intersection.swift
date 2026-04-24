@@ -6,8 +6,6 @@
 //  Copyright © 2019 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 // MARK: - helpers using generics
 
 let tinyValue = 1.0e-10
@@ -112,7 +110,7 @@ private func coincidenceCheck<U: BezierCurve, T: BezierCurve>(_ curve1: U, _ cur
 private extension BezierCurve {
     var derivativeBounds: Double {
         let points = self.points
-        let speeds = (1 ..< points.count).map { points[$0] - points[$0 - 1] }.map { sqrt($0.dot($0)) }
+        let speeds = (1 ..< points.count).map { points[$0] - points[$0 - 1] }.map { BezierMath.sqrt($0.dot($0)) }
         return Double(order) * speeds.max()!
     }
 }
@@ -255,7 +253,7 @@ public extension CubicCurve {
             let loopAtTZeroEdge = (-xSquared + 3 * x) / 3
             guard y >= loopAtTZeroEdge else { return nil }
         } else {
-            let loopAtTOneEdge = (sqrt(3 * (4 * x - xSquared)) - x) / 2
+            let loopAtTOneEdge = (BezierMath.sqrt(3 * (4 * x - xSquared)) - x) / 2
             guard y >= loopAtTOneEdge else { return nil }
         }
         return (discriminant: cuspEdge, canonicalPoint: Point(x: x, y: y))
@@ -270,7 +268,7 @@ public extension CubicCurve {
         let discriminant = info.discriminant
         let x = info.canonicalPoint.x
         let y = info.canonicalPoint.y
-        let radical = sqrt(discriminant)
+        let radical = BezierMath.sqrt(discriminant)
         let denominator = (3 - x - y)
         let t1 = 0.5 * (3 - x - radical) / denominator
         let t2 = 0.5 * (3 - x + radical) / denominator

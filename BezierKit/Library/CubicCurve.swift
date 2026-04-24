@@ -6,8 +6,6 @@
 //  Copyright © 2016 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 /**
  Cubic Bézier Curve
  */
@@ -94,7 +92,7 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         let d2 = p2 - line.point(at: 2.0 / 3.0)
         let dmaxx = max(d1.x * d1.x, d2.x * d2.x)
         let dmaxy = max(d1.y * d1.y, d2.y * d2.y)
-        let error = 3 / 4 * sqrt(dmaxx + dmaxy)
+        let error = 3 / 4 * BezierMath.sqrt(dmaxx + dmaxy)
         return (lineSegment: line, error: error)
     }
 
@@ -147,7 +145,7 @@ public struct CubicCurve: NonlinearBezierCurve, Equatable {
         let n1 = normal(at: 0)
         let n2 = normal(at: 1)
         let s = Utils.clamp(n1.dot(n2), -1.0, 1.0)
-        let angle = Double(abs(acos(Double(s))))
+        let angle = Double(abs(BezierMath.acos(Double(s))))
         return angle < (Double.pi / 3.0)
     }
 

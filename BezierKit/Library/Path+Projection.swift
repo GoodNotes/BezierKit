@@ -6,8 +6,6 @@
 //  Copyright © 2020 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 public extension Path {
     private typealias ComponentTuple = (component: PathComponent, index: Int, upperBound: Double)
     private typealias Candidate = (point: Point, location: IndexedPathLocation)

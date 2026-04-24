@@ -6,8 +6,6 @@
 //  Copyright © 2019 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 private func xIntercept<A: BezierCurve>(curve: A, y: Double) -> Double {
     let startingPoint = curve.startingPoint
     let endingPoint = curve.endingPoint

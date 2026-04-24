@@ -6,8 +6,6 @@
 //  Copyright © 2017 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 public struct QuadraticCurve: NonlinearBezierCurve, Equatable {
     public var p0, p1, p2: Point
 
@@ -78,7 +76,7 @@ public struct QuadraticCurve: NonlinearBezierCurve, Equatable {
         let n1 = normal(at: 0)
         let n2 = normal(at: 1)
         let s = Utils.clamp(n1.dot(n2), -1.0, 1.0)
-        let angle = Double(abs(acos(Double(s))))
+        let angle = Double(abs(BezierMath.acos(Double(s))))
         return angle < (Double.pi / 3.0)
     }
 

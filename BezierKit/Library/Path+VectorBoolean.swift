@@ -6,8 +6,6 @@
 //  Copyright © 2021 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 public extension Path {
     func subtract(_ other: Path, accuracy: Double = BezierKit.defaultIntersectionAccuracy) -> Path {
         return performBooleanOperation(.subtract, with: other.reversed(), accuracy: accuracy)

@@ -5,8 +5,6 @@
 //  Created by Holmes Futrell on 2/19/21.
 //
 
-import Foundation
-
 struct BernsteinPolynomialN: BernsteinPolynomial {
     let coefficients: [Double]
 

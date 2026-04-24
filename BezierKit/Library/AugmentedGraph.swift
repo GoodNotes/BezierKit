@@ -6,8 +6,6 @@
 //  Copyright © 2018 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 enum BooleanPathOperation {
     case union
     case subtract

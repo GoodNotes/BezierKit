@@ -6,8 +6,6 @@
 //  Copyright © 2016 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 extension Array where Element: Comparable {
     func sortedAndUniqued() -> [Element] {
         guard count > 1 else { return self }
@@ -122,7 +120,7 @@ class Utils {
         if t == 0 || t == 1 {
             return t
         }
-        let bottom = pow(t, Double(n)) + pow(1 - t, Double(n))
+        let bottom = BezierMath.pow(t, Double(n)) + BezierMath.pow(1 - t, Double(n))
         let top = bottom - 1
         return abs(top / bottom)
     }
@@ -133,8 +131,8 @@ class Utils {
         if t == 0 || t == 1 {
             return t
         }
-        let top = pow(1.0 - t, Double(n))
-        let bottom = pow(t, Double(n)) + top
+        let top = BezierMath.pow(1.0 - t, Double(n))
+        let bottom = BezierMath.pow(t, Double(n)) + top
         return top / bottom
     }
 
@@ -162,7 +160,7 @@ class Utils {
 
     // cube root function yielding real roots
     private static func crt(_ v: Double) -> Double {
-        return (v < 0) ? -pow(-v, 1.0 / 3.0) : pow(v, 1.0 / 3.0)
+        return (v < 0) ? -BezierMath.pow(-v, 1.0 / 3.0) : BezierMath.pow(v, 1.0 / 3.0)
     }
 
     static func clamp(_ x: Double, _ a: Double, _ b: Double) -> Double {
@@ -202,15 +200,15 @@ class Utils {
         let discriminant = q2 * q2 + p * p * p / 27
         let tinyValue = 1.0e-14
         if discriminant < -tinyValue {
-            let r = sqrt(-p * p * p / 27)
+            let r = BezierMath.sqrt(-p * p * p / 27)
             let t = -q / (2 * r)
             let cosphi = t < -1 ? -1 : t > 1 ? 1 : t
-            let phi = acos(cosphi)
+            let phi = BezierMath.acos(cosphi)
             let crtr = crt(r)
             let t1 = 2 * crtr
-            let root1 = Double(t1 * cos((phi + tau) / 3) - a / 3)
-            let root2 = Double(t1 * cos((phi + 2 * tau) / 3) - a / 3)
-            let root3 = Double(t1 * cos(phi / 3) - a / 3)
+            let root1 = Double(t1 * BezierMath.cos((phi + tau) / 3) - a / 3)
+            let root2 = Double(t1 * BezierMath.cos((phi + 2 * tau) / 3) - a / 3)
+            let root3 = Double(t1 * BezierMath.cos(phi / 3) - a / 3)
             callback(root1)
             if root2 > root1 {
                 callback(root2)
@@ -219,7 +217,7 @@ class Utils {
                 callback(root3)
             }
         } else if discriminant > tinyValue {
-            let sd = sqrt(discriminant)
+            let sd = BezierMath.sqrt(discriminant)
             let u1 = crt(-q2 + sd)
             let v1 = crt(q2 + sd)
             callback(Double(u1 - v1 - a / 3))
@@ -255,7 +253,7 @@ class Utils {
         }
         let radical = p1 * p1 - p0 * p2
         guard radical >= 0 else { return }
-        let m1 = sqrt(radical)
+        let m1 = BezierMath.sqrt(radical)
         let m2 = p0 - p1
         let v1 = Double((m2 + m1) / d)
         let v2 = Double((m2 - m1) / d)
@@ -302,7 +300,7 @@ class Utils {
     static func angle(o: Point, v1: Point, v2: Point) -> Double {
         let d1 = v1 - o
         let d2 = v2 - o
-        return atan2(d1.cross(d2), d1.dot(d2))
+        return BezierMath.atan2(d1.cross(d2), d1.dot(d2))
     }
 
     @inline(__always) private static func shouldRecurse<C>(for subcurve: Subcurve<C>, boundingBoxSize: Point, accuracy: Double) -> Bool {

@@ -6,13 +6,11 @@
 //  Copyright © 2017 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 // swiftlint:disable shorthand_operator
 
 public extension Point {
     var length: Double {
-        return sqrt(lengthSquared)
+        return BezierMath.sqrt(lengthSquared)
     }
 
     internal var lengthSquared: Double {

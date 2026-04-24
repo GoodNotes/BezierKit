@@ -6,8 +6,6 @@
 //  Copyright © 2021 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 /// a parametric function whose x and y coordinates can be considered as separate polynomial functions
 /// eg `f(t) = (xPolynomial(t), yPolynomial(t))`
 public protocol ComponentPolynomials {

@@ -6,8 +6,6 @@
 //  Copyright © 2018 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 public struct ShapeIntersection: Equatable {
     let curve1: BezierCurve
     let curve2: BezierCurve

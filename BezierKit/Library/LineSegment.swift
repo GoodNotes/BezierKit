@@ -6,8 +6,6 @@
 //  Copyright © 2017 Holmes Futrell. All rights reserved.
 //
 
-import Foundation
-
 public struct LineSegment: BezierCurve, Equatable {
     public var p0, p1: Point
 

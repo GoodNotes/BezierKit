@@ -10,4 +10,4 @@ jobs:
     - uses: actions/checkout@v2
     
     - name: Build
-      run: /root/.carton/sdk/$(carton sdk local)/usr/bin/swift build --triple wasm32-unknown-wasi
+      run: $(find /root/.carton/sdk -path '*/usr/bin/swift' -type f | head -n 1) build --triple wasm32-unknown-wasi

@@ -1,17 +1,20 @@
 name: WebAssembly build
 on: [push, pull_request]
 jobs:
-  test:
+  build:
     name: BezierKit WASM support
     runs-on: ubuntu-latest
-    container: ghcr.io/swiftwasm/carton:0.16.0
 
     steps:
-    - uses: actions/checkout@v2
-    
-    # Carton is not able to find our tests if LinuxMain.swift file is defined
-    - name: Remove LinuxMain.swift file
-      run: rm BezierKit/LinuxMain.swift
+    - uses: actions/checkout@v4
 
-    - name: Test
-      run: carton test
+    - uses: swift-actions/setup-swift@v3
+      with:
+        swift-version: main-snapshot-2026-06-24
+        skip-verify-signature: true
+
+    - name: Install WebAssembly SDK
+      run: swift sdk install --checksum b8e808d6c1b83636c68668eea27f504ac07973f0f8c68d0d053d11ef4eb96a44 https://github.com/swiftwasm/swift/releases/download/swift-wasm-DEVELOPMENT-SNAPSHOT-2026-06-24-a/swift-wasm-DEVELOPMENT-SNAPSHOT-2026-06-24-a-wasm32-unknown-wasip1-threads.artifactbundle.zip
+
+    - name: Build
+      run: swift build --build-system native --swift-sdk DEVELOPMENT-SNAPSHOT-2026-06-24-a-wasm32-unknown-wasip1-threads

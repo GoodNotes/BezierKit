@@ -53,6 +53,30 @@ enum BezierMath {
         WASILibc.sqrt(x)
     }
 }
+#elseif canImport(Android)
+import Android
+
+enum BezierMath {
+    static func acos(_ x: Double) -> Double {
+        Android.acos(x)
+    }
+
+    static func atan2(_ y: Double, _ x: Double) -> Double {
+        Android.atan2(y, x)
+    }
+
+    static func cos(_ x: Double) -> Double {
+        Android.cos(x)
+    }
+
+    static func pow(_ x: Double, _ y: Double) -> Double {
+        Android.pow(x, y)
+    }
+
+    static func sqrt(_ x: Double) -> Double {
+        Android.sqrt(x)
+    }
+}
 #elseif canImport(Glibc)
 import Glibc
 

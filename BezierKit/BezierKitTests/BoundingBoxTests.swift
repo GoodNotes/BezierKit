@@ -114,13 +114,15 @@ class BoundingBoxTests: XCTestCase {
         XCTAssertEqual(box2.union(Point(x: 1, y: 7)), BoundingBox(p1: Point(x: -2, y: -1), p2: Point(x: 3, y: 7)))
     }
 
-    func testCGRect() {
-        // test a standard box
-        let box1 = BoundingBox(p1: Point(x: 2.0, y: 3.0), p2: Point(x: 3.0, y: 5.0))
-        XCTAssertEqual(box1.cgRect, Rect(origin: Point(x: 2.0, y: 3.0), size: CGSize(width: 1.0, height: 2.0)).cgRect)
-        // test the empty box
-        XCTAssertEqual(BoundingBox.empty.cgRect, CGRect.null)
-    }
+    #if canImport(CoreGraphics)
+        func testCGRect() {
+            // test a standard box
+            let box1 = BoundingBox(p1: Point(x: 2.0, y: 3.0), p2: Point(x: 3.0, y: 5.0))
+            XCTAssertEqual(box1.cgRect, Rect(origin: Point(x: 2.0, y: 3.0), size: CGSize(width: 1.0, height: 2.0)).cgRect)
+            // test the empty box
+            XCTAssertEqual(BoundingBox.empty.cgRect, CGRect.null)
+        }
+    #endif
 
     func testInitFirstSecond() {
         let box1 = BoundingBox(p1: Point(x: 2.0, y: 3.0), p2: Point(x: 3.0, y: 5.0))

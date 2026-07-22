@@ -17,4 +17,4 @@ jobs:
       run: swift sdk install --checksum b8e808d6c1b83636c68668eea27f504ac07973f0f8c68d0d053d11ef4eb96a44 https://github.com/swiftwasm/swift/releases/download/swift-wasm-DEVELOPMENT-SNAPSHOT-2026-06-24-a/swift-wasm-DEVELOPMENT-SNAPSHOT-2026-06-24-a-wasm32-unknown-wasip1-threads.artifactbundle.zip
 
     - name: Build
-      run: swift build --swift-sdk DEVELOPMENT-SNAPSHOT-2026-06-24-a-wasm32-unknown-wasip1-threads
+      run: swift build --build-system native --swift-sdk DEVELOPMENT-SNAPSHOT-2026-06-24-a-wasm32-unknown-wasip1-threads
